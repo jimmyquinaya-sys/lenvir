@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lenvir Explorer &mdash; Glosario Ambiental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#010F27;
+  --navy-2:#0A1A38;
+  --navy-3:#16254A;
+  --blue:#0056F5;
+  --blue-dark:#0040C2;
+  --green:#05DA95;
+  --green-dark:#03A876;
+  --white:#FFFFFF;
+  --paper:#F4F6FA;
+  --paper-line:#DCE3EF;
+  --ink:#0A1020;
+  --ink-soft:#5B647A;
+  --error:#F0473F;
+  --error-dark:#C23830;
+  --gold:#F5B400;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--navy);font-family:'Inter',sans-serif;color:var(--ink);min-height:100vh;-webkit-tap-highlight-color:transparent;}
+.app-shell{max-width:460px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,0,0,.5);overflow-x:hidden;}
+h1,h2,h3,.display{font-family:'Sora',sans-serif;font-weight:700;letter-spacing:-0.01em;margin:0;}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;border:none;cursor:pointer;background:none;}
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+
+/* ---------- HUD ---------- */
+.hud{position:sticky;top:0;z-index:30;background:var(--navy);color:var(--white);padding:13px 16px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--blue);}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand-mark{width:26px;height:38px;flex-shrink:0;}
+.brand-name{font-family:'Sora',sans-serif;font-weight:800;font-size:16px;letter-spacing:.01em;}
+.hud-stats{display:flex;align-items:center;gap:10px;}
+.stat{display:flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;}
+.gear-btn{padding:4px;color:var(--white);opacity:.85;}
+.gear-btn svg{width:19px;height:19px;display:block;}
+
+/* ---------- MAP ---------- */
+.map-wrap{position:relative;flex:1;padding:24px 18px 60px;}
+.map-bg-svg{position:absolute;inset:0;width:100%;height:100%;opacity:.35;pointer-events:none;}
+.map-intro{position:relative;z-index:2;margin-bottom:14px;}
+.map-intro .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--blue);text-transform:uppercase;font-weight:600;}
+.map-intro h2{font-size:21px;color:var(--ink);margin-top:4px;}
+.tagline{font-size:11.5px;color:var(--ink-soft);margin-top:5px;letter-spacing:.02em;}
+.tagline b{color:var(--blue);}
+.tagline b.g{color:var(--green-dark);}
+.review-banner{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;background:#fff;border:2px solid var(--navy);border-radius:12px;padding:11px 14px;margin-bottom:20px;}
+.review-banner.empty{opacity:.7;}
+.review-title{font-weight:600;font-size:13px;}
+.review-sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+.path{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:0;}
+.node-row{display:flex;width:100%;align-items:center;margin:2px 0;}
+.node-row.left{justify-content:flex-start;}
+.node-row.center{justify-content:center;}
+.node-row.right{justify-content:flex-end;}
+.connector{width:4px;height:30px;background:repeating-linear-gradient(to bottom, var(--paper-line) 0 6px, transparent 6px 12px);margin:0 auto;}
+.node-btn{width:84px;height:84px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid var(--navy);position:relative;transition:transform .12s ease;}
+.node-btn:active{transform:scale(.94);}
+.node-btn .node-id{font-family:'Sora',sans-serif;font-weight:800;font-size:18px;}
+.node-btn .node-stars{display:flex;gap:1px;margin-top:2px;}
+.node-btn .node-stars svg{width:8px;height:8px;}
+.node-locked{background:#C7CEDC;border-color:#A9B2C6;color:var(--white);opacity:.7;}
+.node-current{background:var(--blue);border-color:var(--blue-dark);color:#fff;box-shadow:0 0 0 6px rgba(0,86,245,0.16);animation:pulse 2.2s infinite;}
+.node-done{background:var(--green);border-color:var(--green-dark);color:#06291E;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 6px rgba(0,86,245,0.16);}50%{box-shadow:0 0 0 11px rgba(0,86,245,0.05);}}
+.node-label{text-align:center;font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:var(--ink-soft);margin-top:6px;max-width:104px;line-height:1.25;}
+.node-col{display:flex;flex-direction:column;align-items:center;}
+@media (prefers-reduced-motion: reduce){.node-current{animation:none;}}
+
+/* ---------- MODAL ---------- */
+.overlay{position:fixed;inset:0;background:rgba(1,15,39,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center;}
+.sheet{width:100%;max-width:460px;background:var(--paper);border-radius:20px 20px 0 0;padding:22px 20px 28px;max-height:88vh;overflow-y:auto;animation:slideUp .22s ease-out;}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet-close{position:absolute;right:18px;top:14px;color:var(--ink-soft);}
+.sheet-close svg{width:22px;height:22px;}
+.sheet h2{font-size:19px;}
+.sheet .module-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);font-weight:600;}
+.level-card{margin-top:16px;border:2px solid var(--navy);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;background:#fff;}
+.level-card.locked{opacity:.55;}
+.level-left{display:flex;flex-direction:column;gap:5px;}
+.level-name{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;}
+.level-sub{font-size:11px;color:var(--ink-soft);}
+.level-stars{display:flex;gap:2px;}
+.level-stars svg{width:15px;height:15px;}
+.level-btn{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;padding:9px 14px;border-radius:8px;background:var(--blue);color:#fff;white-space:nowrap;}
+.level-btn.review{background:var(--navy-2);}
+.lock-pill{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:12px;}
+.lock-pill svg{width:16px;height:16px;}
+
+/* ---------- LESSON ---------- */
+.lesson-top{position:sticky;top:0;z-index:30;background:var(--navy);padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.progress-track{flex:1;height:10px;background:var(--navy-3);border-radius:6px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--green);transition:width .25s ease;}
+.exit-btn{padding:4px;color:var(--white);opacity:.85;}
+.exit-btn svg{width:19px;height:19px;display:block;}
+.lives{display:flex;gap:4px;}
+.life-icon{width:18px;height:18px;}
+.lesson-body{padding:22px 18px 150px;}
+.case-tag-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.case-tag{display:inline-block;background:var(--navy);color:var(--white);font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11.5px;padding:5px 10px;border-radius:6px;}
+.timer-badge{display:flex;align-items:center;gap:5px;background:#fff;border:2px solid var(--navy);border-radius:20px;padding:4px 10px 4px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12.5px;color:var(--ink);}
+.timer-badge svg{width:14px;height:14px;flex-shrink:0;}
+.timer-badge.ticking{border-color:var(--blue-dark);color:var(--blue-dark);}
+.timer-badge.frozen{opacity:.75;}
+.term-card{background:#fff;border:2px solid var(--navy);border-radius:14px;padding:22px 18px;text-align:center;position:relative;margin-bottom:8px;}
+.term-card::before{content:"TÉRMINO";position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--paper);font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;color:var(--ink-soft);padding:0 8px;letter-spacing:.08em;}
+.term-word{font-family:'Sora',sans-serif;font-weight:800;font-size:25px;color:var(--navy);line-height:1.2;}
+.term-prompt{text-align:center;font-size:13px;color:var(--ink-soft);margin:10px 0 18px;}
+.options{display:flex;flex-direction:column;gap:10px;}
+.option{display:flex;align-items:flex-start;gap:12px;text-align:left;border:2px solid var(--navy);border-radius:12px;padding:13px 14px;background:#fff;font-size:13.8px;line-height:1.4;color:var(--ink);transition:transform .08s ease;}
+.option:active{transform:scale(.985);}
+.option .badge{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:2px solid var(--navy);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;margin-top:1px;}
+.option.correct{border-color:var(--green-dark);background:#E3FBF1;}
+.option.correct .badge{background:var(--green);border-color:var(--green-dark);color:#06291E;}
+.option.wrong{border-color:var(--error-dark);background:#FDEAE8;}
+.option.wrong .badge{background:var(--error);border-color:var(--error-dark);color:#fff;}
+.option.dim{opacity:.5;}
+.option[disabled]{pointer-events:none;}
+.feedback-sheet{position:fixed;left:0;right:0;bottom:0;z-index:35;max-width:460px;margin:0 auto;border-radius:18px 18px 0 0;padding:18px 18px 22px;animation:slideUp .2s ease-out;}
+.feedback-sheet.ok{background:#E3FBF1;border-top:4px solid var(--green);}
+.feedback-sheet.bad{background:#FDEAE8;border-top:4px solid var(--error);}
+.fb-row{display:flex;align-items:center;gap:12px;}
+.stamp{flex-shrink:0;width:62px;height:62px;border-radius:50%;border:3px solid currentColor;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Sora',sans-serif;font-weight:800;font-size:10px;line-height:1.1;transform:rotate(-6deg) scale(0);animation:stampIn .32s cubic-bezier(.34,1.56,.64,1) forwards;}
+@keyframes stampIn{to{transform:rotate(-6deg) scale(1);}}
+@media (prefers-reduced-motion: reduce){.stamp{animation:none;transform:rotate(-6deg) scale(1);}}
+.feedback-sheet.ok .stamp{color:var(--green-dark);}
+.feedback-sheet.bad .stamp{color:var(--error-dark);}
+.fb-text{flex:1;}
+.fb-title{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;}
+.feedback-sheet.ok .fb-title{color:var(--green-dark);}
+.feedback-sheet.bad .fb-title{color:var(--error-dark);}
+.fb-body{font-size:13.5px;line-height:1.45;color:var(--ink);margin-top:6px;}
+.fb-continue{margin-top:14px;width:100%;padding:13px;border-radius:10px;font-family:'Sora',sans-serif;font-weight:700;font-size:14.5px;color:#fff;}
+.feedback-sheet.ok .fb-continue{background:var(--green-dark);}
+.feedback-sheet.bad .fb-continue{background:var(--error-dark);}
+
+/* ---------- SUMMARY ---------- */
+.summary-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;text-align:center;}
+.summary-stamp{width:108px;height:108px;border-radius:50%;border:5px solid var(--navy);display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:#fff;}
+.summary-stamp.fail{border-color:var(--error);}
+.summary-stars{display:flex;gap:5px;margin:6px 0 14px;}
+.summary-stars svg{width:32px;height:32px;}
+.summary-title{font-size:21px;margin-bottom:6px;}
+.summary-sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;}
+.summary-grid{display:flex;gap:12px;margin-bottom:16px;width:100%;max-width:300px;}
+.summary-box{flex:1;background:#fff;border:2px solid var(--navy);border-radius:10px;padding:10px 6px;}
+.summary-box .num{font-family:'Sora',sans-serif;font-weight:800;font-size:18px;}
+.summary-box .lbl{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+.badges-toast{width:100%;max-width:300px;background:#FFF6DD;border:2px solid var(--gold);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;text-align:left;}
+.badges-toast b{display:block;font-family:'Sora',sans-serif;font-size:13.5px;margin-bottom:2px;}
+.btn-primary{width:100%;max-width:300px;padding:15px;border-radius:12px;background:var(--blue);color:#fff;font-family:'Sora',sans-serif;font-weight:700;font-size:15px;box-shadow:0 4px 0 var(--blue-dark);}
+.btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--blue-dark);}
+.btn-ghost{width:100%;max-width:300px;padding:13px;margin-top:10px;border-radius:12px;background:transparent;color:var(--navy-2);font-weight:600;font-size:14px;border:2px solid var(--navy-2);}
+
+/* ---------- SETTINGS / PROGRESO ---------- */
+.settings-sheet{padding:22px 20px 30px;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--paper-line);}
+.settings-row:last-child{border-bottom:none;}
+.danger-btn{color:var(--error);font-weight:600;font-size:13px;border:2px solid var(--error);padding:8px 12px;border-radius:8px;}
+.badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.badge-card{background:#fff;border:2px solid var(--navy);border-radius:12px;padding:12px 10px;text-align:center;}
+.badge-card.locked{opacity:.5;}
+.badge-icon svg{width:30px;height:30px;}
+.badge-name{font-family:'Sora',sans-serif;font-weight:700;font-size:11.5px;margin-top:6px;}
+.badge-desc{font-size:10px;color:var(--ink-soft);margin-top:3px;line-height:1.3;}
+
+/* ---------- STARS ---------- */
+.star-filled{fill:var(--gold);stroke:var(--navy);stroke-width:8;}
+.star-empty{fill:#E7EAF2;stroke:var(--paper-line);stroke-width:8;}
+
+::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div id="app" class="app-shell"></div>
+
+<script>
+const CASES = [{"id": "CON-001", "mod": 1, "termino": "SEIA", "options": ["Siglas del Sistema Nacional de Evaluación de Impacto Ambiental, un marco único y coordinado para la prevención de riesgos ambientales.", "Sindicato de Especialistas en Ingeniería Ambiental del Perú.", "Servicio Estatal de Inspección Agraria, encargado de la titulación de tierras comunales rurales."], "correctIndex": 0, "feedback": "El SEIA, creado por la Ley N° 27446, es el marco único y coordinado de evaluación ambiental previa a la ejecución de un proyecto; las otras opciones inventan siglas que no existen en la normativa peruana.", "lesson": 1}, {"id": "CON-002", "mod": 1, "termino": "IGA", "options": ["Indicador Geográfico de Afectación, mapa técnico utilizado para delimitar ecosistemas frágiles.", "Instrumento de Gestión Ambiental, mecanismo operativo preventivo o correctivo para asegurar el cumplimiento ambiental.", "Impuesto General a la Actividad, tasa impositiva que pagan las consultoras ante la SUNAT."], "correctIndex": 1, "feedback": "Un IGA (DIA, EIA-sd, EIA-d, PAMA, etc.) es el mecanismo preventivo o correctivo que canaliza los compromisos ambientales de un proyecto; no debe confundirse con un tributo ni con un mapa de delimitación.", "lesson": 1}, {"id": "CON-003", "mod": 1, "termino": "INACAL", "options": ["Consorcio de Industrias Ambientales de la Comunidad Andina.", "Inspectoría Nacional de Agua y Alcantarillado, oficina técnica dependiente de la ANA.", "Instituto Nacional de Calidad, ente rector encargado de la acreditación oficial de laboratorios bajo estándares ISO."], "correctIndex": 2, "feedback": "El INACAL acredita oficialmente a los laboratorios bajo normas internacionales (ISO/IEC 17025); sin esa acreditación, los resultados de monitoreo carecen de validez ante la autoridad ambiental.", "lesson": 1}, {"id": "CON-004", "mod": 1, "termino": "OEFA", "options": ["Oficina Estatal de Bosques y Fauna Silvestre, encargada de otorgar permisos de desbroce técnico.", "Organismo de Evaluación y Fiscalización Ambiental, ente encargado de fiscalizar, supervisar y sancionar en materia ambiental.", "Ordenanza de Estándares Físicos de Agua, reglamento que fija los límites de vertidos."], "correctIndex": 1, "feedback": "El OEFA es el ente nacional de fiscalización, supervisión y sanción ambiental, creado dentro del SINEFA; no otorga permisos de desbosque ni regula vertidos directamente.", "lesson": 1}, {"id": "CON-005", "mod": 1, "termino": "Senace", "options": ["Sindicato Nacional de Consultores y Evaluadores del Sector Transportes.", "Secretaría de Energía Nacional y Áreas Críticas de Inversión Pública.", "Servicio Nacional de Certificación Ambiental para las Inversiones Sostenibles, encargado de evaluar los estudios más complejos (EIA-d)."], "correctIndex": 2, "feedback": "El SENACE certifica los estudios ambientales más complejos (típicamente EIA-d) de varios sectores productivos, incluido el de transportes.", "lesson": 1}, {"id": "CON-006", "mod": 1, "termino": "MINAM", "options": ["Municipio Metropolitano Ambiental, encargado del control de ruidos urbanos.", "Ministerio del Ambiente, ente rector del sector ambiental en el Perú que norma el SEIA.", "Manual Interno de Auditoría Minera, guía utilizada por los fiscalizadores en campo."], "correctIndex": 1, "feedback": "El MINAM es el ente rector del Sistema Nacional de Gestión Ambiental y del SEIA; las demás opciones inventan funciones municipales o de auditoría minera que no le corresponden.", "lesson": 1}, {"id": "CON-007", "mod": 1, "termino": "ECA", "options": ["Evaluación de Contingencias Ambientales, plan técnico de respuesta rápida ante derrames de petróleo.", "Enfoque Comunitario Abierto, mecanismo de participación ciudadana en áreas rurales.", "Estándar de Calidad Ambiental, nivel de concentración de elementos presentes en el cuerpo receptor (aire, agua, suelo) que no daña la salud."], "correctIndex": 2, "feedback": "El ECA mide la calidad del ambiente (aire, agua, suelo) en general, no la emisión de una fuente puntual ni un plan de contingencia frente a derrames.", "lesson": 1}, {"id": "CON-008", "mod": 1, "termino": "LMP", "options": ["Límite Máximo Permisible, medida de la concentración de elementos en un efluente o emisión, exigible en el punto de vertido o salida.", "Límite del Medio Pre-operacional, coordenada que define visualmente el área de influencia indirecta.", "Licencia de Manejo Presupuestal, monto mínimo requerido para financiar el Plan de Cierre."], "correctIndex": 0, "feedback": "El LMP se exige justo en el punto de vertido o emisión de una fuente puntual; es la contraparte del ECA, que mide la calidad del cuerpo receptor.", "lesson": 1}, {"id": "CON-009", "mod": 1, "termino": "DIA", "options": ["Diagnóstico Inicial de Afectación, informe rápido utilizado para identificar pasivos históricos.", "Declaración de Impacto Ambiental, instrumento preventivo (Categoría I) para proyectos cuyas actividades generan impactos negativos leves.", "Documento de Identidad Ambiental, carné obligatorio emitido por el MINAM para consultores júnior."], "correctIndex": 1, "feedback": "La DIA es el instrumento de Categoría I, para proyectos con impactos leves; no es un carné personal ni un diagnóstico de pasivos.", "lesson": 1}, {"id": "CON-010", "mod": 1, "termino": "EIA-sd", "options": ["Evaluación Integral de Aguas Subterráneas de Distribución, estudio hidráulico especializado.", "Estudio de Impacto Ambiental Semi-detallado, aplicable a proyectos con impactos ambientales negativos moderados (Categoría II).", "Instrumento de Gestión Ambiental de carácter correctivo para empresas industriales en marcha."], "correctIndex": 1, "feedback": "El EIA-sd corresponde a la Categoría II del SEIA, para impactos moderados; las otras opciones confunden el concepto con estudios hidráulicos o instrumentos que no existen como tales.", "lesson": 1}, {"id": "CON-011", "mod": 1, "termino": "EIA-d", "options": ["Evaluación Inmediata de Daños Ambientales, informe pericial gatillado tras un desastre o derrame.", "Estudio de Impacto Ambiental Detallado, exigido a proyectos cuyas operaciones pueden generar impactos negativos significativos (Categoría III).", "Estatuto Internacional de Acreditación Directa, convenio que regula a los laboratorios privados."], "correctIndex": 1, "feedback": "El EIA-d es exigible a proyectos de Categoría III, con impactos potencialmente significativos, y requiere el mayor nivel de detalle técnico del SEIA.", "lesson": 2}, {"id": "CON-012", "mod": 1, "termino": "ANA", "options": ["Alianza Nacional Ambiental, red de ONGs encargadas de la veeduría ciudadana de proyectos mineros.", "Academia Nacional de Acreditación, encargada de validar la experticia de los ingenieros.", "Autoridad Nacional del Agua, ente rector del Sistema Nacional de Gestión de los Recursos Hídricos en el Perú."], "correctIndex": 2, "feedback": "La ANA es el ente rector del Sistema Nacional de Gestión de los Recursos Hídricos, competente en derechos de uso de agua, vertimientos y obras hidráulicas.", "lesson": 2}, {"id": "CON-013", "mod": 1, "termino": "SERNANP", "options": ["Secretaría de Regulación de Pasivos Ambientales y Pasivos Mineros.", "Sistema de Evaluación de Riesgos Naturales y Antrópicos de la Región Andina.", "Servicio Nacional de Áreas Naturales Protegidas por el Estado, organismo encargado de asegurar la conservación de las ANP."], "correctIndex": 2, "feedback": "El SERNANP administra y asegura la conservación de las Áreas Naturales Protegidas; emite opinión vinculante cuando un proyecto se superpone con ellas o su zona de amortiguamiento.", "lesson": 2}, {"id": "CON-014", "mod": 1, "termino": "SERFOR", "options": ["Secretaría Regional de Fiscalización Operativa y Remediación Ambiental.", "Servicio Nacional Forestal y de Fauna Silvestre, autoridad nacional encargada de la gestión del patrimonio forestal.", "Sistema de Evaluación Rápida de Flora y Fauna Organizada de la Amazonía."], "correctIndex": 1, "feedback": "El SERFOR es la autoridad forestal nacional, competente en autorizaciones de desbosque e inventarios de flora y fauna silvestre.", "lesson": 2}, {"id": "CON-015", "mod": 1, "termino": "ITS", "options": ["Informe Técnico Sustentatorio, instrumento de modificación simplificado para cambios con impactos negativos no significativos.", "Inspección Técnica de Suelos, procedimiento de laboratorio acreditado para medir metales pesados.", "Indicador de Tolerancia Social, encuesta estadística utilizada en las mesas de diálogo."], "correctIndex": 0, "feedback": "El ITS es un instrumento simplificado para modificaciones con impactos no significativos, mucho más ágil que tramitar una modificación completa del IGA.", "lesson": 2}, {"id": "CON-016", "mod": 2, "termino": "Línea de Base", "options": ["La delimitación geométrica de las oficinas, almacenes y campamentos temporales del contratista.", "El diagnóstico integral y pre-operacional del estado físico, biótico y social del territorio antes de ejecutar un proyecto.", "El presupuesto detallado de inversión que la empresa constructora asigna a las medidas de mitigación en campo."], "correctIndex": 1, "feedback": "La línea base caracteriza el estado físico, biótico y social del entorno ANTES de intervenir; sin ella no hay forma de medir objetivamente los impactos reales del proyecto.", "lesson": 1}, {"id": "CON-017", "mod": 2, "termino": "Área de Influencia Directa", "options": ["Toda la extensión territorial del departamento o región política donde la empresa paga sus derechos mineros.", "El espacio geográfico donde se prevé la manifestación inmediata, primaria y medible de los impactos ambientales y sociales del proyecto.", "El perímetro exclusivo donde se ubican las oficinas administrativas y la gerencia general de la empresa."], "correctIndex": 1, "feedback": "El AID es donde el impacto se manifiesta de forma inmediata y medible; no equivale a todo el departamento ni se limita a las oficinas del titular.", "lesson": 1}, {"id": "CON-018", "mod": 2, "termino": "Área de Influencia Indirecta", "options": ["El espacio perimetral externo al área directa donde los impactos se atenúan y se manifiestan de manera secundaria o diferida.", "La zona intangible de un Parque Nacional donde está prohibida cualquier actividad humana o extractiva.", "El campamento cerrado del contratista destinado al almacenamiento temporal de insumos químicos peligrosos."], "correctIndex": 0, "feedback": "El AII es la zona donde los impactos se manifiestan de forma secundaria o diferida; no es zona intangible de un ANP ni un campamento.", "lesson": 1}, {"id": "CON-019", "mod": 2, "termino": "Componente Ambiental", "options": ["Una póliza de seguro obligatorio que cubre económicamente los daños ante desastres de origen natural.", "Cada una de las subdivisiones operativas del entorno (como agua, aire, suelo, flora, fauna) utilizadas para enfocar el análisis de impactos.", "El porcentaje de aditivos químicos que se le agrega al cemento para estabilizar los taludes de una carretera."], "correctIndex": 1, "feedback": "Los componentes ambientales (agua, aire, suelo, flora, fauna, social) son las subdivisiones que estructuran todo el análisis de impactos de un EIA.", "lesson": 1}, {"id": "CON-020", "mod": 2, "termino": "Ecosistema Frágil", "options": ["Un laboratorio de análisis químico que no cuenta con la acreditación vigente ante el INACAL.", "Una zona con características ecológicas singulares, alta riqueza de biodiversidad y gran vulnerabilidad frente a intervenciones humanas.", "Un botadero de residuos municipales que ha superado su capacidad máxima de almacenamiento en la ciudad."], "correctIndex": 1, "feedback": "Un ecosistema frágil combina alta biodiversidad con alta vulnerabilidad ante intervención humana (como bofedales o humedales), y exige medidas de manejo reforzadas.", "lesson": 1}, {"id": "CON-021", "mod": 2, "termino": "Especie Indicadora", "options": ["Un organismo vivo cuyas características (presencia, ausencia o densidad) sirven como índice del estado o perturbación de un ecosistema.", "Una planta exótica utilizada exclusivamente para decorar las áreas de recreación del campamento minero.", "Un animal doméstico introducido en la zona de obra para controlar plagas o vectores biológicos."], "correctIndex": 0, "feedback": "Una especie indicadora revela, por su presencia o ausencia, el estado de salud de un ecosistema; no se refiere a especies domésticas ni ornamentales.", "lesson": 1}, {"id": "CON-022", "mod": 2, "termino": "Pasivo Ambiental", "options": ["El conjunto de equipos de monitoreo de aire y ruido que ya cumplieron su vida útil y deben ser desechados.", "Un deterioro, daño o contaminación histórica preexistente en el entorno, generada por actividades pasadas actualmente abandonadas.", "Una deuda tributaria pendiente de pago que la empresa consultora arrastra con la SUNAT desde años anteriores."], "correctIndex": 1, "feedback": "Un pasivo ambiental es una afectación histórica generada por actividades ya abandonadas, no remediada; no es una deuda tributaria ni equipos obsoletos.", "lesson": 1}, {"id": "CON-023", "mod": 2, "termino": "Impacto Acumulativo", "options": ["La alteración resultante de los impactos incrementales combinados de la acción propuesta, sumados a otras actividades pasadas y presentes.", "El efecto positivo instantáneo que se genera al contratar mano de obra local para las actividades operativas.", "Un accidente técnico menor que ocurre de forma repetitiva dentro del taller de mantenimiento mecánico del proyecto."], "correctIndex": 0, "feedback": "El impacto acumulativo suma los efectos incrementales de la acción propuesta con otras actividades pasadas y presentes en la misma zona.", "lesson": 1}, {"id": "CON-024", "mod": 2, "termino": "Impacto Sinérgico", "options": ["La reducción paulatina de los niveles de ruido ambiental gracias al uso de maquinaria pesada moderna y silenciada.", "Aquel que se produce cuando el effecto conjunto de la presencia simultánea de varias acciones es superior a la suma de los impactos individuales.", "Un impacto que se genera de forma imprevista únicamente durante la etapa de cierre definitivo del proyecto de inversión."], "correctIndex": 1, "feedback": "Un impacto sinérgico ocurre cuando el efecto conjunto de varias acciones simultáneas supera la simple suma de sus efectos individuales.", "lesson": 1}, {"id": "CON-025", "mod": 2, "termino": "Jerarquía de Mitigación", "options": ["Un enfoque secuencial obligatorio de gestión que prioriza las decisiones en el orden de: evitar, minimizar, restaurar y compensar.", "El cronograma que establece qué profesionales de la consultora ambiental tienen mayor rango de decisión en campo.", "El orden de importancia de las multas económicas que el OEFA puede aplicar a una empresa según el sector."], "correctIndex": 0, "feedback": "La jerarquía de mitigación obliga a evitar primero, minimizar después, y solo restaurar o compensar lo que no pudo evitarse ni minimizarse.", "lesson": 1}, {"id": "CON-026", "mod": 2, "termino": "Compensación Ambiental", "options": ["El pago en dinero en efectivo que la empresa entrega a los propietarios de terrenos para poder construir una vía.", "Una bonificación salarial extraordinaria otorgada a los ingenieros de SST que logran reducir los accidentes laborales.", "Las medidas destinadas a generar un beneficio proporcional a los impactos negativos significativos no mitigables, en un área ecológicamente equivalente."], "correctIndex": 2, "feedback": "La compensación ambiental busca un beneficio ecológicamente equivalente frente a un impacto residual no mitigable; no es un pago en efectivo a terceros.", "lesson": 2}, {"id": "CON-027", "mod": 2, "termino": "Remediación Ambiental", "options": ["El trámite legal mediante el cual se solicita una prórroga para presentar el Plan de Manejo Ambiental ante el Ministerio.", "El conjunto de operaciones técnicas aplicadas sobre un suelo o acuífero contaminado para reducir los contaminantes por debajo de los ECA.", "La siembra de grass sintético sobre los taludes de las carreteras para evitar que visualmente se note el desbroce forestal."], "correctIndex": 1, "feedback": "Remediar implica intervenir técnicamente un suelo o acuífero contaminado hasta bajar los contaminantes por debajo del ECA aplicable, no solo disimular visualmente el daño.", "lesson": 2}, {"id": "CON-028", "mod": 2, "termino": "Cadena de Custodia", "options": ["La secuencia de contratos comerciales entre la empresa titular del proyecto y sus subcontratistas locales.", "El documento técnico-legal que registra cronológicamente la posesión, transporte y manejo de una muestra ambiental desde su colecta.", "El sistema de seguridad privada encargado de resguardar el ingreso de camiones de carga al proyecto."], "correctIndex": 1, "feedback": "La cadena de custodia documenta cronológicamente quién tuvo la muestra, cuándo y cómo, garantizando que el resultado de laboratorio sea confiable y trazable.", "lesson": 2}, {"id": "CON-029", "mod": 2, "termino": "Punto de Monitoreo", "options": ["La coordenada geográfica exacta, establecida en el estudio ambiental, destinada a la recolección periódica de muestras.", "El lugar designado para que los trabajadores de la obra se reúnan en caso de un simulacro de sismo o tsunami.", "La oficina del supervisor de la EFA dentro del campamento donde se revisan los reportes de ingeniería."], "correctIndex": 0, "feedback": "Un punto de monitoreo es una coordenada fija establecida en el IGA para tomar muestras periódicas; reubicarlo sin gestión adecuada puede invalidar el seguimiento ambiental.", "lesson": 2}, {"id": "CON-030", "mod": 2, "termino": "Medida de Prevención", "options": ["Una obra de ingeniería compleja destinada a limpiar un río después de que ha ocurrido un derrame químico masivo.", "Una póliza de fianza bancaria que asegura el pago de indemnizaciones a terceros por accidentes de tránsito.", "Una acción de diseño o procedimiento operativo implementado con el fin específico de impedir que ocurra un impacto ambiental adverso."], "correctIndex": 2, "feedback": "Prevenir es actuar ANTES de que el impacto ocurra; se diferencia de la mitigación (que reduce un impacto ya generado) y de la remediación (que repara un daño consumado).", "lesson": 2}, {"id": "CON-031", "mod": 3, "termino": "TUPA", "options": ["Tarifa Única de Penalidades Ambientales, escala de multas utilizada por el OEFA durante las fiscalizaciones.", "Siglas del Texto Único de Procedimientos Administrativos, documento que unifica los requisitos, costos y plazos de los trámites ante la autoridad.", "Términos Unificados de Proyectos Agrícolas, guía obligatoria para la clasificación de bofedales y pastizales."], "correctIndex": 1, "feedback": "El TUPA unifica requisitos, costos y plazos de cada procedimiento administrativo; es la primera referencia obligatoria antes de iniciar cualquier trámite ante una entidad.", "lesson": 1}, {"id": "CON-032", "mod": 3, "termino": "Silencio Administrativo Negativo", "options": ["Mecanismo de sanción que aplica el Ministerio para suspender de forma definitiva la licencia de un consultor júnior.", "Cláusula de confidencialidad que impide a las comunidades campesinas conocer el presupuesto del Plan de Cierre.", "Efecto legal donde, si la autoridad no responde en el plazo, se entiende que el estudio fue desestimado, permitiendo al titular apelar."], "correctIndex": 2, "feedback": "El silencio negativo permite al titular impugnar la falta de respuesta como si fuera una denegatoria expresa, abriendo la vía de apelación sin esperar indefinidamente.", "lesson": 1}, {"id": "CON-033", "mod": 3, "termino": "Caducidad de la Certificación", "options": ["La anulación automática de un estudio ambiental cuando la consultora cambia de gerente general o de dirección fiscal.", "El proceso de obsolescencia técnica de los equipos de laboratorio después de cumplirse el año de su calibración.", "La pérdida de vigencia legal del IGA aprobado si el titular no inicia las obras físicas del proyecto dentro del plazo máximo fijado por ley (3 a 5 años)."], "correctIndex": 2, "feedback": "La certificación ambiental caduca si el titular no inicia obras dentro del plazo legal (entre 3 y 5 años, según el sector); no depende de cambios internos de la consultora.", "lesson": 1}, {"id": "CON-034", "mod": 3, "termino": "Admisibilidad", "options": ["Evaluación inicial de forma donde la autoridad verifica que el estudio cumpla con los requisitos mínimos del TUPA antes de pasar a la revisión de fondo.", "La autorización formal que otorga una comunidad campesina para que los ingenieros ingresen a tomar muestras de suelo.", "El porcentaje máximo de impactos leves que un proyecto de Categoría I puede generar en un entorno urbano."], "correctIndex": 0, "feedback": "La admisibilidad es un filtro de forma (requisitos del TUPA); superarla no garantiza la aprobación, solo habilita pasar a la revisión técnica de fondo.", "lesson": 1}, {"id": "CON-035", "mod": 3, "termino": "Improcedencia", "options": ["El derecho del titular a negarse a levantar las observaciones técnicas que considere demasiado costosas de implementar.", "Resolución que da por concluido el trámite de forma negativa debido a una inviabilidad técnica o legal insubsanable del proyecto.", "Una multa económica equivalente a 100 UIT impuesta por el OEFA debido a la quema no autorizada de residuos sólidos."], "correctIndex": 1, "feedback": "La improcedencia cierra el trámite por una inviabilidad técnica o legal que no puede subsanarse, a diferencia de una observación, que sí admite levantamiento.", "lesson": 1}, {"id": "CON-036", "mod": 3, "termino": "Leve de Observaciones", "options": ["El proceso de compra de terrenos colindantes para ampliar el área de influencia indirecta antes de la aprobación del EIA.", "Procedimiento técnico-legal donde el titular responde, fundamenta y subsana los reparos planteados por la autoridad y opinantes técnicos.", "La firma de un acta de compromiso entre la empresa constructora y el sindicato de trabajadores locales de la obra."], "correctIndex": 1, "feedback": "Levantar observaciones es el procedimiento por el cual el titular responde y subsana técnicamente los reparos planteados por la autoridad y los opinantes.", "lesson": 1}, {"id": "CON-037", "mod": 3, "termino": "Plan de Participación Ciudadana", "options": ["El documento obligatorio que define los mecanismos (talleres, audiencias) para informar y recoger aportes de la población sobre el proyecto.", "Un cronograma de pagos y viáticos destinados exclusivamente a las autoridades municipales de la zona de influencia del proyecto.", "El diseño de las pólizas de seguro de accidentes de trabajo aplicables a los profesionales que realizan la Línea de Base."], "correctIndex": 0, "feedback": "El Plan de Participación Ciudadana define los mecanismos (audiencias, talleres, buzones) para informar a la población y recoger sus aportes sobre el proyecto.", "lesson": 1}, {"id": "CON-038", "mod": 3, "termino": "Consulta Previa", "options": ["La revisión técnica preliminar que hace el Senace a los TdR de un proyecto antes de que este sea vendido a un inversor.", "Proceso de diálogo intercultural obligatorio entre el Estado y los pueblos indígenas antes de aprobar medidas que afecten sus derechos colectivos.", "Una encuesta de opinión rápida que realiza la consultora ambiental mediante redes sociales para medir la aceptación de una obra."], "correctIndex": 1, "feedback": "La consulta previa es un diálogo intercultural obligatorio con pueblos indígenas antes de medidas que afecten sus derechos colectivos; no es una encuesta informal en redes.", "lesson": 1}, {"id": "CON-039", "mod": 3, "termino": "Enfoque Intercultural", "options": ["Metodología legal que exige adaptar la comunicación, idiomas y dinámicas de participación a las costumbres e identidad de las poblaciones locales.", "Un criterio de diseño que exige que los campamentos mineros respeten la arquitectura tradicional de la zona andina.", "La obligación de contratar un porcentaje equivalente de ingenieros de diferentes universidades del país para el estudio."], "correctIndex": 0, "feedback": "El enfoque intercultural exige adaptar idioma, medios y dinámicas de participación a la identidad cultural de la población, no imponer un único formato estándar.", "lesson": 1}, {"id": "CON-040", "mod": 3, "termino": "Resumen Ejecutivo", "options": ["El discurso de apertura que realiza el gerente de la empresa consultora durante la instalación de una mesa de diálogo social.", "Un informe financiero confidencial que se presenta únicamente ante el Ministerio de Economía y Finanzas para asegurar los fondos.", "Versión resumida del EIA, redactada en lenguaje claro, accesible y no técnico (traducido si corresponde) para difusión masiva en la población."], "correctIndex": 2, "feedback": "El Resumen Ejecutivo traduce el EIA a lenguaje claro y accesible para la población; no es un documento financiero ni un discurso protocolar.", "lesson": 1}, {"id": "CON-041", "mod": 3, "termino": "Opinión Técnica No Vinculante", "options": ["Una resolución judicial emitida por la Corte Suprema que detiene de forma temporal la ejecución de un megaproyecto vial.", "El dictamen emitido por el SERNANP que prohíbe estrictamente el desbroce de flora dentro de una zona de amortiguamiento.", "Un informe técnico complementario que aporta recomendaciones, pero cuya adopción legal no es impositiva para la autoridad evaluadora."], "correctIndex": 2, "feedback": "Una opinión no vinculante aporta recomendaciones que la autoridad puede considerar, pero su adopción no es obligatoria, a diferencia de una opinión vinculante.", "lesson": 2}, {"id": "CON-042", "mod": 3, "termino": "Medida Cautelar", "options": ["El pago de una fianza económica que realiza el titular antes de ingresar su estudio ambiental a la mesa de partes virtual.", "Una recomendación técnica que el AI Mentor le entrega al usuario de LENVIR cuando este comete un error grave en la simulación.", "Una disposición provisional y de ejecución inmediata (como paralizar obras) dictada para evitar un daño ambiental grave mientras dura un proceso."], "correctIndex": 2, "feedback": "Una medida cautelar es provisional y de ejecución inmediata (como paralizar obras) para evitar un daño grave mientras se resuelve el fondo del proceso.", "lesson": 2}, {"id": "CON-043", "mod": 3, "termino": "Procedimiento Administrativo Sancionador", "options": ["El trámite regular de categorización que realiza una empresa ante el Senace para obtener su certificación ambiental en 30 días.", "El conjunto de exámenes médicos obligatorios que se le realizan al personal técnico antes de salir a tomar muestras biológicas.", "El proceso legal formal (PAS) iniciado por una EFA para investigar presuntas infracciones ambientales y determinar multas o sanciones."], "correctIndex": 2, "feedback": "El PAS es el trámite formal de una EFA para investigar infracciones y determinar sanciones; no debe confundirse con la evaluación de un EIA ni con exámenes médicos.", "lesson": 2}, {"id": "CON-044", "mod": 3, "termino": "UIT", "options": ["Siglas de la Unidad Impositiva Tributaria, el valor de referencia económico establecido por el Estado utilizado para fijar las escalas de multas.", "Unión Internacional de Trámites Ambientales, el organismo transnacional que regula las ISO de calidad de aire a nivel global.", "Unidades de Impacto Técnico, el indicador matemático que utiliza la Matriz de Leopold para medir la magnitud del daño ambiental."], "correctIndex": 0, "feedback": "La UIT es el valor de referencia oficial usado para fijar escalas de multas y otros montos administrativos en el Perú; no mide impacto técnico ni regula calidad de aire.", "lesson": 2}, {"id": "CON-045", "mod": 3, "termino": "Actualización del IGA", "options": ["El cambio inmediato del trazo de una carretera que el contratista ejecuta en campo sin avisar a la autoridad supervisora.", "La compra de nuevas licencias de software de sistemas de información geográfica (SIG) para el equipo de ingenieros cartógrafos.", "La obligación legal de revisar y adecuar el estudio ambiental cada cinco años desde el inicio de operaciones para integrar nuevos impactos."], "correctIndex": 2, "feedback": "El IGA debe revisarse y adecuarse periódicamente (cada 5 años en muchos sectores) para incorporar impactos no previstos originalmente; no es un simple cambio de software.", "lesson": 2}, {"id": "CON-046", "mod": 3, "termino": "Barlovento", "options": ["El punto de descarga final donde un efluente minero se mezcla con un río receptor.", "La dirección desde donde sopla el viento; punto crítico aguas arriba para colocar la estación de monitoreo de control de aire.", "Coordenada técnica que define el límite de profundidad de un pozo de monitoreo de agua subterránea."], "correctIndex": 1, "feedback": "Barlovento es de donde viene el viento; ahí se ubica la estación de control para tener una referencia 'limpia' antes de que el viento atraviese la fuente emisora.", "lesson": 2}, {"id": "CON-047", "mod": 3, "termino": "Sotavento", "options": ["El protocolo de calibración interna que se le realiza a un sonómetro antes de medir ruido.", "La dirección hacia donde va el viento; punto crítico aguas abajo para ubicar la estación de mayor impacto en monitoreo de aire.", "El ecosistema frágil ubicado en la parte más alta de una cuenca hidrográfica."], "correctIndex": 1, "feedback": "Sotavento es hacia donde va el viento; ahí se coloca la estación de mayor impacto, porque recibe directamente lo que la fuente emisora dispersa.", "lesson": 2}, {"id": "CON-048", "mod": 3, "termino": "Sonómetro", "options": ["Instrumento de medición calibrado utilizado para registrar los niveles de presión sonora (ruido) en campo.", "Dispositivo óptico que mide la opacidad de los gases emitidos por las chimeneas industriales.", "Equipo de ingeniería utilizado para medir la velocidad de infiltración del agua en suelos arcillosos."], "correctIndex": 0, "feedback": "El sonómetro mide el nivel de presión sonora en campo; no mide infiltración de agua ni opacidad de gases, que usan equipos distintos.", "lesson": 2}, {"id": "CON-049", "mod": 3, "termino": "Estación de Monitoreo", "options": ["La oficina del OEFA encargada de recibir las denuncias ambientales de los ciudadanos.", "El campamento móvil donde los técnicos de campo pernoctan durante la campaña de Línea de Base.", "Coordenada geográfica fija y codificada, establecida en el IGA, para la toma periódica de muestras ambientales."], "correctIndex": 2, "feedback": "Una estación de monitoreo es una coordenada fija y codificada en el IGA; no es un campamento móvil ni una oficina administrativa.", "lesson": 2}, {"id": "CON-050", "mod": 3, "termino": "PM10", "options": ["El porcentaje máximo de material orgánico permitido en un suelo agrícola de la sierra.", "Partículas suspendidas en el aire con un diámetro menor a 10 micrómetros, capaces de ingresar al sistema respiratorio humano.", "El código impositivo que utiliza la SUNAT para aplicar penalidades a las consultoras ambientales."], "correctIndex": 1, "feedback": "El PM10 son partículas de hasta 10 micrómetros que ya pueden ingresar al sistema respiratorio; es uno de los parámetros centrales del ECA Aire.", "lesson": 2}, {"id": "CON-051", "mod": 3, "termino": "PM2.5", "options": ["El indicador matemático de dispersión de contaminantes en cuerpos de agua lénticos.", "El segundo paso procedimental requerido para tramitar una Declaración de Impacto Ambiental.", "Material particulado fino con diámetro menor a 2.5 micrómetros, altamente crítico por su capacidad de penetrar hasta los alvéolos pulmonares."], "correctIndex": 2, "feedback": "El PM2.5 es material aún más fino que el PM10, capaz de llegar hasta los alvéolos pulmonares, por lo que su estándar es más estricto.", "lesson": 3}, {"id": "CON-052", "mod": 3, "termino": "Muestreo Isocinetico", "options": ["Metodología técnica obligatoria para colectar muestras de material particulado directamente en chimeneas o fuentes fijas de emisión.", "La recolección de muestras de suelo a diferentes profundidades utilizando una pala de acero inoxidable de grado quirúrgico.", "El conteo aleatorio de especies de flora utilizando cuadrantes de un metro cuadrado en la costa peruana."], "correctIndex": 0, "feedback": "El muestreo isocinético es la metodología obligatoria para captar material particulado directamente en chimeneas o fuentes fijas, replicando la velocidad real del flujo de gases.", "lesson": 3}, {"id": "CON-053", "mod": 3, "termino": "Oxígeno Disuelto", "options": ["El porcentaje de aire puro que debe mantener un campamento minero en ambientes cerrados por seguridad de SST.", "Un aditivo químico volátil utilizado para acelerar la remediación de suelos contaminados por hidrocarburos.", "Parámetro crítico de calidad de agua que mide la cantidad de oxígeno gaseoso disuelto en el cuerpo hídrico, vital para la vida acuática."], "correctIndex": 2, "feedback": "El oxígeno disuelto es un parámetro clave de calidad de agua: niveles bajos comprometen directamente la vida acuática del cuerpo receptor.", "lesson": 3}, {"id": "CON-054", "mod": 3, "termino": "Ruido Ambiental", "options": ["Las quejas y reclamos que los miembros de la comunidad expresan verbalmente en un taller informativo.", "Las interferencias electromagnéticas que alteran las lecturas de los GPS de alta precisión en zonas de selva.", "El sonido no deseado o nocivo generado por actividades humanas en el entorno exterior, regulado mediante ECA específicos."], "correctIndex": 2, "feedback": "El ruido ambiental es el sonido no deseado generado por actividades humanas en el exterior, regulado mediante el ECA Ruido según zona y horario.", "lesson": 3}, {"id": "CON-055", "mod": 3, "termino": "Monitoreo Dirimente", "options": ["La fiscalización inopinada que realiza el fiscal del ambiente acompañado por la policía ecológica.", "Evaluación ambiental ejecutada por un tercer laboratorio acreditado neutral para resolver discrepancias entre dos resultados opuestos.", "El descarte rápido de pasivos ambientales mediante el uso de imágenes satelitales de alta resolución."], "correctIndex": 1, "feedback": "El monitoreo dirimente lo realiza un tercer laboratorio neutral para resolver una discrepancia entre dos resultados opuestos, no para reemplazar una fiscalización inopinada.", "lesson": 3}, {"id": "CON-056", "mod": 3, "termino": "Parámetro Field", "options": ["El nombre técnico que recibe el especialista encargado de liderar la campaña de Línea de Base Social.", "El formulario digital que llena el supervisor de seguridad antes de autorizar un trabajo en caliente.", "Datos que se miden in situ inmediatamente al colectar la muestra de agua (como pH, temperatura y conductividad) porque varían rápido."], "correctIndex": 2, "feedback": "Los parámetros de campo (pH, temperatura, conductividad) se miden in situ porque varían apenas se extrae la muestra; medirlos después en laboratorio invalidaría el dato.", "lesson": 3}, {"id": "CON-057", "mod": 3, "termino": "DBH", "options": ["El indicador técnico utilizado para medir la dureza de las rocas antes de una voladura minera.", "Siglas del Departamento de Biología e Hidrología de la Autoridad Competente en el Perú.", "Medida forestal estándar tomada a 1.3 metros del suelo, obligatoria para registrar árboles en el inventario biológico."], "correctIndex": 2, "feedback": "El DBH (diámetro a la altura del pecho, medido a 1.3 m del suelo) es el estándar forestal para registrar árboles en cualquier inventario biológico.", "lesson": 3}, {"id": "CON-058", "mod": 3, "termino": "Trampa Sherman", "options": ["Un software de modelamiento matemático utilizado para predecir la dispersión de gases industriales.", "Dispositivo técnico de caída utilizado en la Línea de Base Biológica para capturar de forma segura micro-mamíferos no voladores.", "El método de contención física utilizado para frenar el avance de un derrame de petróleo en el mar."], "correctIndex": 1, "feedback": "La trampa Sherman es un dispositivo de captura viva usado en la línea base biológica para muestrear micromamíferos no voladores sin dañarlos.", "lesson": 3}, {"id": "CON-059", "mod": 3, "termino": "Red Surber", "options": ["Red de muestreo con marco metálico utilizada en ríos para colectar macroinvertebrados bentónicos como indicadores de calidad de agua.", "El sistema de mallas de seguridad perimetral que se coloca alrededor de las excavaciones profundas en una obra.", "La plataforma digital interna que utiliza el Senace para interconectar a los opinantes técnicos vinculantes."], "correctIndex": 0, "feedback": "La red Surber se usa en ríos para colectar macroinvertebrados bentónicos, organismos que funcionan como indicadores sensibles de la calidad del agua.", "lesson": 3}, {"id": "CON-060", "mod": 3, "termino": "Protocolo de Monitoreo", "options": ["Guía metodológica oficial y de cumplimiento obligatorio dictada por el Estado que regula cómo medir un componente ambiental específico.", "El acta firmada por el fiscalizador del OEFA al concluir una auditoría de campo sin encontrar hallazgos.", "El contrato confidencial de prestación de servicios entre el titular del proyecto y el laboratorio acreditado."], "correctIndex": 0, "feedback": "Un protocolo de monitoreo es la guía oficial obligatoria que define cómo medir correctamente un componente ambiental; no es un contrato ni un acta de conformidad.", "lesson": 3}, {"id": "CON-061", "mod": 4, "termino": "Estrategia de Manejo Ambiental", "options": ["El documento de planificación financiera donde la empresa detalla el pago de utilidades a sus inversionistas.", "La estrategia comercial de la consultora para ganar licitaciones públicas de obras hidráulicas.", "El conjunto estructurado de planes, programas y sub-presupuestos destinados a operativizar los compromisos de mitigación, contingencias y cierre."], "correctIndex": 2, "feedback": "La Estrategia de Manejo Ambiental articula todos los planes y sub-presupuestos (mitigación, contingencias, cierre) en un solo conjunto operativo coherente.", "lesson": 1}, {"id": "CON-062", "mod": 4, "termino": "Plan de Contingencias", "options": ["El fondo económico de reserva destinado a cubrir los aumentos de sueldo por inflación del personal.", "Un contrato de seguros que indemniza a la empresa únicamente en caso de quiebra financiera por baja producción.", "Documento de respuesta rápida que define roles, recursos y canales de comunicación ante situaciones de emergencia, accidentes o desastres."], "correctIndex": 2, "feedback": "El Plan de Contingencias define roles, recursos y comunicación ante una emergencia; su ausencia o desactualización es uno de los hallazgos más comunes en fiscalización.", "lesson": 1}, {"id": "CON-063", "mod": 4, "termino": "Plan de Cierre o Abandono", "options": ["La renuncia formal del ingeniero de SST debido a discrepancias técnicas con la gerencia del proyecto.", "Estrategia técnica y económica destinada a desmantelar instalaciones y recuperar el terreno de forma segura al concluir las operaciones.", "La rescisión del contrato de la consultora ambiental por parte del titular debido al incumplimiento de plazos."], "correctIndex": 1, "feedback": "El Plan de Cierre desmantela instalaciones y recupera el terreno de forma segura al concluir operaciones; no tiene relación con renuncias de personal ni rescisión de contratos.", "lesson": 1}, {"id": "CON-064", "mod": 4, "termino": "Plan de Relaciones Comunitarias", "options": ["El reglamento interno que prohíbe a los trabajadores de la obra sindicalizarse o realizar protestas laborales.", "El cronograma de viáticos y alojamiento para los ingenieros que realizan el monitoreo biológico en campo.", "Conjunto de programas diseñados para gestionar interacciones armoniosas con la población local (comunicación, empleo local, quejas)."], "correctIndex": 2, "feedback": "El PRC gestiona la relación con la población local (empleo, comunicación, atención de quejas) durante toda la vida del proyecto, no solo durante la obra.", "lesson": 1}, {"id": "CON-065", "mod": 4, "termino": "Pasivo Ambiental Minero", "options": ["Instalaciones, efluentes, emisiones o restos de faenas mineras abandonadas que constituyen un riesgo permanente para la salud y el ambiente.", "El conjunto de maquinarias pesadas en desuso que la empresa vende como chatarra al finalizar la obra.", "Una deuda tributaria no cancelada que las empresas mineras mantienen con las municipalidades provinciales."], "correctIndex": 0, "feedback": "Un PAM es infraestructura, efluente o resto de una faena minera ABANDONADA que sigue representando riesgo; se rige por la Ley N° 28271, distinta de la normativa vial.", "lesson": 1}, {"id": "CON-066", "mod": 4, "termino": "Garantía Financiera de Cierre", "options": ["Una póliza de seguro contra todo riesgo que protege las oficinas administrativas del titular ante robos o incendios.", "El pago por adelantado que realiza el titular a la consultora ambiental para iniciar los trabajos de Línea de Base.", "Depósito o fianza exigida por ley para asegurar que el Estado cuente con fondos para ejecutar el cierre si la empresa abandona el proyecto."], "correctIndex": 2, "feedback": "La garantía financiera asegura que, aunque la empresa abandone el proyecto, el Estado cuente con fondos para ejecutar el cierre; no es un anticipo a la consultora.", "lesson": 1}, {"id": "CON-067", "mod": 4, "termino": "Zanja de Infiltración", "options": ["Una excavación profunda destinada al entierro sanitario de residuos peligrosos generados en el taller mecánico.", "Canal de sección trapezoidal construido a curva de nivel para capturar la escorrentía superficial y reducir la erosión del suelo.", "El canal de concreto utilizado para conducir los efluentes industriales directamente hacia el río receptor sin tratamiento."], "correctIndex": 1, "feedback": "La zanja de infiltración, construida a curva de nivel, capta la escorrentía superficial y reduce la erosión; no tiene relación con entierro de residuos peligrosos.", "lesson": 1}, {"id": "CON-068", "mod": 4, "termino": "Hidrosiembra", "options": ["Un método químico utilizado en laboratorios acreditados para acelerar el crecimiento de bacterias degradadoras de petróleo.", "Técnica de revegetación mecánica mediante la proyección hidroneumática de una mezcla de semillas, mulch, fertilizantes y agua sobre taludes.", "El riego intensivo con agua potable de las áreas verdes del campamento para reducir el levantamiento de polvo."], "correctIndex": 1, "feedback": "La hidrosiembra proyecta semillas, mulch y fertilizante mezclados con agua sobre un talud para revegetarlo rápidamente tras el movimiento de tierras.", "lesson": 1}, {"id": "CON-069", "mod": 4, "termino": "Segregación de Residuos", "options": ["La venta directa de materiales reciclables a empresas informales de la zona para reducir los costos de disposición.", "El proceso de clasificar y agrupar los residuos sólidos en la fuente de generación según sus características y código de colores.", "La quema controlada de papeles y cartones dentro del campamento para evitar la acumulación de basura en los almacenes."], "correctIndex": 1, "feedback": "Segregar es clasificar los residuos en la propia fuente de generación según su tipo y código de colores, paso previo indispensable a cualquier manejo posterior.", "lesson": 1}, {"id": "CON-070", "mod": 4, "termino": "Residuo Peligroso", "options": ["Los restos de alimentos e insumos orgánicos generados diariamente en el comedor principal del campamento.", "Aquel que por sus características (corrosivo, reactivo, tóxico, inflamable) representa un riesgo significativo para la salud o el ambiente.", "Cualquier material descartado que supere un peso neto de 50 kilogramos dentro de los talleres de mantenimiento."], "correctIndex": 1, "feedback": "Un residuo es peligroso por sus características intrínsecas (corrosivo, reactivo, tóxico, inflamable), no por su peso ni por ser de origen orgánico.", "lesson": 1}, {"id": "CON-071", "mod": 4, "termino": "Área de Almacenamiento Temporal", "options": ["El terreno baldío ubicado fuera del AID donde se arrojan los desmontes y escombros de la construcción de forma libre.", "Espacio acondicionado y techado utilizado para acopiar transitoriamente los residuos antes de su transporte y disposición final.", "La oficina del supervisor del OEFA donde se guardan temporalmente las muestras recolectadas durante una fiscalización."], "correctIndex": 1, "feedback": "El área de almacenamiento temporal es un espacio acondicionado y techado para acopiar residuos antes de su disposición final; nunca un terreno baldío sin control.", "lesson": 2}, {"id": "CON-072", "mod": 4, "termino": "EO-RS", "options": ["Evaluación Operativa de Riesgos Sanitarios, inspección médica que se realiza anualmente a los ingenieros de campo.", "Empresa Operadora de Residuos Sólidos, entidad autorizada por el MINAM para realizar el transporte y disposición final segura de residuos.", "Estación Oficial de Ruido Subterráneo, sensor de geofísica utilizado para medir vibraciones por voladuras."], "correctIndex": 1, "feedback": "La EO-RS es la empresa autorizada por el MINAM para transportar y disponer residuos sólidos de forma segura; contratar una sin registro vigente invalida el manejo realizado.", "lesson": 2}, {"id": "CON-073", "mod": 4, "termino": "Disposición Final", "options": ["La venta de los activos y maquinarias de la empresa al concluir el tiempo de vida útil del proyecto minero.", "El vertido directo de lodos de perforación en lagunas locales bajo la autorización firmada del juez de paz de la zona.", "Proceso de aislamiento definitivo de los residuos sólidos en infraestructuras autorizadas (como rellenos sanitarios o de seguridad)."], "correctIndex": 2, "feedback": "La disposición final aísla definitivamente el residuo en infraestructura autorizada (relleno sanitario o de seguridad); verterlo en un cuerpo de agua nunca es disposición final válida.", "lesson": 2}, {"id": "CON-074", "mod": 4, "termino": "Relleno de Seguridad", "options": ["Infraestructura de ingeniería sanitaria diseñada exclusivamente para la disposición final segura de residuos sólidos peligrosos.", "Una trinchera excavada en el suelo utilizada para ocultar equipos mecánicos costosos durante las huelgas comunales.", "El muro de contención construido alrededor del depósito de combustible para evitar derrames por fallas técnicas."], "correctIndex": 0, "feedback": "El relleno de seguridad está diseñado exclusivamente para residuos PELIGROSOS; el relleno sanitario, en cambio, es para residuos municipales o no peligrosos.", "lesson": 2}, {"id": "CON-075", "mod": 4, "termino": "Relleno Sanitario", "options": ["El sistema de pozas de evaporación utilizado para tratar las aguas residuales industriales con alto contenido de sales.", "Instalación de ingeniería destinada a la disposición final segura de los residuos sólidos municipales o no peligrosos en el suelo.", "Un botadero a cielo abierto controlado por la municipalidad local que no cuenta con geomembrana de protección."], "correctIndex": 1, "feedback": "El relleno sanitario dispone residuos municipales o no peligrosos con ingeniería adecuada; un botadero a cielo abierto sin geomembrana no cumple ese estándar.", "lesson": 2}, {"id": "CON-076", "mod": 4, "termino": "Lixiviado", "options": ["El agua purificada que sale de una planta de tratamiento lista para ser reutilizada en el riego de vías no pavimentadas.", "Líquido percolado procedente de los residuos, que se genera por la descomposición orgánica y la infiltración de agua de lluvia.", "El aditivo químico que se inyecta en los pozos petroleros para aumentar la presión y facilitar la extracción del crudo."], "correctIndex": 1, "feedback": "El lixiviado es el líquido que percola de los residuos por descomposición e infiltración de lluvia; su manejo inadecuado contamina suelo y agua subterránea.", "lesson": 2}, {"id": "CON-077", "mod": 4, "termino": "Geomembrana", "options": ["Una lona impermeable común utilizada para techar los almacenes temporales de herramientas del proyecto.", "La malla de acero que se coloca sobre los taludes de las carreteras para evitar el desprendimiento de rocas sueltas.", "Barrera sintética de muy baja permeabilidad (polietileno de alta densidad) utilizada para revestir pozas y evitar la filtración de contaminantes."], "correctIndex": 2, "feedback": "La geomembrana es una barrera sintética de muy baja permeabilidad que evita la filtración de contaminantes desde pozas o rellenos; una lona común no cumple esa función técnica.", "lesson": 2}, {"id": "CON-078", "mod": 4, "termino": "Bofedal", "options": ["El canal de drenaje artificial construido para desviar las aguas de lluvia fuera del perímetro de la planta.", "Un terreno desértico de la costa peruana apto para la instalación de rellenos sanitarios mecanizados.", "Humedal altoandino permanente, con vegetación hidrófila, considerado un ecosistema frágil de alta sensibilidad e importancia hídrica."], "correctIndex": 2, "feedback": "Un bofedal es un humedal altoandino permanente, ecosistema frágil de alta sensibilidad hídrica; intervenirlo exige medidas de manejo reforzadas.", "lesson": 2}, {"id": "CON-079", "mod": 4, "termino": "Lona de Control de Polvo", "options": ["La alfombra atrapamuseos instalada en la entrada de las oficinas para mantener la limpieza del campamento.", "El uniforme térmico reflectivo de uso obligatorio para el personal técnico que realiza monitoreo de aire a barlovento.", "Malla raschel o cobertura física colocada sobre los camiones de carga de material agregado para evitar la emisión de material particulado."], "correctIndex": 2, "feedback": "La lona o malla raschel cubre la carga de los camiones para evitar que el material particulado se disperse durante el transporte.", "lesson": 2}, {"id": "CON-080", "mod": 4, "termino": "Pérdida Neta Cero", "options": ["Objetivo de la compensación ambiental que busca que los impactos residuales sobre la biodiversidad sean balanceados por ganancias ecológicas equivalentes.", "La reducción al 0% de los accidentes de trabajo con tiempo perdido dentro de las actividades de construcción vial.", "El indicador financiero que demuestra que la empresa no ha tenido pérdidas económicas durante el año fiscal evaluado."], "correctIndex": 0, "feedback": "Pérdida Neta Cero busca que los impactos residuales sobre biodiversidad queden balanceados por ganancias ecológicas equivalentes; no es un indicador financiero ni de seguridad laboral.", "lesson": 2}, {"id": "CON-081", "mod": 5, "termino": "SINEFA", "options": ["Sistema Nacional de Evaluación y Fiscalización Ambiental, marco encargado de asegurar el cumplimiento de las obligaciones ambientales.", "Sindicato Nacional de Evaluadores de Infraestructura y Fomento de la Amazonía Peruana.", "Sistema Informativo de Emisiones de Fuentes Abiertas, software utilizado para el modelamiento de calidad de aire."], "correctIndex": 0, "feedback": "El SINEFA es el marco institucional, creado por la Ley N° 29325, que articula a todas las EFA para asegurar el cumplimiento ambiental en el país.", "lesson": 1}, {"id": "CON-082", "mod": 5, "termino": "Fiscalización Ambiental", "options": ["La auditoría contable que realiza la SUNAT para verificar el pago de impuestos de las consultoras ambientales registradas.", "Acción de control posterior ejecu_tada por una EFA para verificar el cumplimiento de las obligaciones y compromisos del IGA.", "El proceso de revisión técnica y subsanación de observaciones que realiza el Senace antes de aprobar un EIA-d."], "correctIndex": 1, "feedback": "La fiscalización es un control POSTERIOR a la aprobación del IGA, que verifica el cumplimiento real en campo; no debe confundirse con la evaluación previa de un EIA.", "lesson": 1}, {"id": "CON-083", "mod": 5, "termino": "Infracción Ambiental", "options": ["Un retraso justificado en la entrega de los informes de monitoreo trimestrales debido a huelgas comunales en la vía.", "Acción u omisión que contraviene las normas ambientales, los compromisos del IGA o las medidas dictadas por el organismo fiscalizador.", "La contratación de profesionales júnior que no cuentan con la habilitación vigente del Colegio de Ingenieros del Perú."], "correctIndex": 1, "feedback": "Una infracción es cualquier acción u omisión que contraviene la norma, el IGA o una medida dictada por el fiscalizador; un retraso justificado no es, por sí solo, infracción.", "lesson": 1}, {"id": "CON-084", "mod": 5, "termino": "Medida Correctiva (OEFA)", "options": ["Una penalidad económica que la empresa constructora le descuenta al subcontratista por demoras en la obra.", "La modificación excepcional del Plan de Manejo Ambiental para reducir los costos de implementación en campo.", "Mandato administrativo dictado por el regulador destinado a revertir, restaurar o mitigar la situación de deterioro generada por una infracción."], "correctIndex": 2, "feedback": "La medida correctiva busca revertir o restaurar el deterioro causado por una infracción; es distinta de la sanción, que castiga la conducta.", "lesson": 1}, {"id": "CON-085", "mod": 5, "termino": "PAS", "options": ["Protocolo de Acreditación de Sonómetros, directriz técnica dictada por el INACAL para la calibración de equipos.", "Procedimiento Administrativo Sancionador, proceso legal formal iniciado por una EFA para investigar infracciones y determinar sanciones.", "Plan de Adecuación Social, programa de relaciones comunitarias enfocado en el pago de indemnizaciones prediales."], "correctIndex": 1, "feedback": "El PAS es el proceso formal con etapa instructora y decisora que determina si hubo infracción y qué sanción corresponde, conforme al Reglamento del PAS de OEFA.", "lesson": 1}, {"id": "CON-086", "mod": 5, "termino": "Hallazgo", "options": ["El reporte de campo que elabora el laboratorio acreditado al concluir la campaña de muestreo de calidad de agua.", "Situación detectada durante una supervisión ambiental que evidencia un presunto incumplimiento o una oportunidad de mejora.", "El descubrimiento arqueológico accidental de restos prehispánicos durante las excavaciones para la cimentación de la planta."], "correctIndex": 1, "feedback": "Un hallazgo es lo detectado en una supervisión que evidencia un presunto incumplimiento u oportunidad de mejora; no todo hallazgo termina en sanción.", "lesson": 1}, {"id": "CON-087", "mod": 5, "termino": "No Conformidad", "options": ["La disconformidad expresada por los miembros de la comunidad campesina durante la audiencia pública de un proyecto.", "La negativa de la autoridad competente a recibir un recurso de apelación presentado fuera del plazo del TUPA.", "Desviación o incumplimiento documentado respecto a un requisito legal o compromiso ambiental establecido formalmente en el IGA."], "correctIndex": 2, "feedback": "Una no conformidad es una desviación documentada respecto a un requisito legal o compromiso del IGA, distinta de un simple desacuerdo verbal de la comunidad.", "lesson": 1}, {"id": "CON-088", "mod": 5, "termino": "Medida Preventiva (OEFA)", "options": ["El examen médico ocupacional obligatorio que se le realiza a los trabajadores expuestos a niveles altos de ruido.", "La instalación de señalización vial reflectiva antes de iniciar las obras de mantenimiento de una carretera.", "Disposición administrativa impuesta para evitar un daño inminente o la continuación de un impacto ambiental negativo grave sobre el entorno."], "correctIndex": 2, "feedback": "La medida preventiva busca evitar un daño inminente o que continúe un impacto grave; se dicta antes o durante el PAS, sin esperar su resultado final.", "lesson": 1}, {"id": "CON-089", "mod": 5, "termino": "Amonestación Verbal", "options": ["Sanción administrativa no pecuniaria consistente en una llamada de atención formal que no implica el pago de una multa económica.", "El reclamo pacífico que realiza la población local fuera de las instalaciones del campamento del proyecto.", "La llamada de atención que realiza el supervisor de seguridad al obrero que no utiliza su casco de protección."], "correctIndex": 0, "feedback": "La amonestación verbal es una sanción administrativa NO pecuniaria; existe formalmente en el régimen sancionador, aunque no implique pago de multa.", "lesson": 1}, {"id": "CON-090", "mod": 5, "termino": "Multa Coercitiva", "options": ["Una tasa impositiva extraordinaria que pagan las empresas industriales que operan cerca de zonas urbanas densas.", "El cobro que realiza la municipalidad provincial por los derechos de uso de las vías públicas para camiones pesados.", "Sanción económica reiterativa impuesta por la autoridad para obligar al titular a cumplir con un mandato o medida correctiva dictada."], "correctIndex": 2, "feedback": "La multa coercitiva se repite en el tiempo para forzar el cumplimiento de un mandato; no es un tributo ni un cobro municipal por uso de vías.", "lesson": 1}, {"id": "CON-091", "mod": 5, "termino": "RFA", "options": ["Reglamento de Fiscalización Agraria, norma que regula el uso de pesticidas y agroquímicos en la sierra peruana.", "Reunión de Formalización Ambiental, mesa de diálogo técnica convocada para regularizar proyectos sin certificación.", "Registro de Infractores Ambientales, base de datos pública del OEFA donde se inscriben las empresas sancionadas con resoluciones firmes."], "correctIndex": 2, "feedback": "El RFA (Registro de Infractores Ambientales) es público y reúne a quienes han sido sancionados con resolución firme.", "lesson": 2}, {"id": "CON-092", "mod": 5, "termino": "Supervisión Inopinada", "options": ["Acción de control en campo ejecutada por la autoridad fiscalizadora sin previo aviso al titular del proyecto de inversión.", "La inspección ocular que realiza la fiscalía del ambiente acompañada exclusivamente por los dirigentes comunales.", "La auditoría interna que realiza el gerente de SST a las empresas contratistas los fines de semana de forma aleatoria."], "correctIndex": 0, "feedback": "La supervisión inopinada se ejecuta sin previo aviso al titular, justamente para verificar las condiciones reales de operación en cualquier momento.", "lesson": 2}, {"id": "CON-093", "mod": 5, "termino": "Supervisión Programada", "options": ["El monitoreo ambiental participativo de calidad de agua que realiza la comunidad según el cronograma del PMA.", "Acción de control planificada e inscrita en el Planefa, cuya fecha y alcance son notificados previamente al titular del proyecto.", "La revisión diaria de las bitácoras de los camiones de carga que realiza el supervisor técnico del contratista."], "correctIndex": 1, "feedback": "La supervisión programada está inscrita en el PLANEFA y se notifica previamente al titular, a diferencia de la inopinada.", "lesson": 2}, {"id": "CON-094", "mod": 5, "termino": "PLANEFA", "options": ["Plan de Emergencia por Inundaciones y Fenómenos Anómalos, protocolo sectorial aplicable a proyectos viales de la costa.", "Plataforma Nacional de Estudios de Fauna Activa, base de datos digital del SERFOR para el registro de inventarios biológicos.", "Plan FA, Plan Anual de Evaluación y Fiscalización Ambiental, documento obligatorio donde cada EFA planifica sus acciones del año."], "correctIndex": 2, "feedback": "El PLANEFA es el documento obligatorio donde cada EFA planifica sus acciones de evaluación y fiscalización del año.", "lesson": 2}, {"id": "CON-095", "mod": 5, "termino": "Resolución Firme", "options": ["El documento mediante el cual el Senace declara inadmisible un estudio ambiental por falta de firmas técnicas.", "La resolución ministerial que aprueba de forma definitiva los Términos de Referencia Comunes para un sector industrial.", "Acto administrativo que pone fin al procedimiento sancionador, al no haber sido impugnado en el plazo legal o tras agotarse la vía administrativa."], "correctIndex": 2, "feedback": "Una resolución queda firme cuando no fue impugnada en plazo o se agotó la vía administrativa; recién ahí el RFA puede inscribir al infractor.", "lesson": 2}, {"id": "CON-096", "mod": 5, "termino": "Eximente de Responsabilidad", "options": ["La autorización expresa del Ministerio para omitir el monitoreo de ruido ambiental durante los feriados nacionales.", "Condición legal (como caso fortuito o fuerza mayor) que libera al titular de la aplicación de una sanción ante un incumplimiento detectado.", "Un beneficio económico que reduce en un 50% el costo de tramitación de una Declaración de Impacto Ambiental."], "correctIndex": 1, "feedback": "Un eximente (caso fortuito o fuerza mayor) libera al titular de la sanción ante un incumplimiento detectado, siempre que se acredite debidamente.", "lesson": 2}, {"id": "CON-097", "mod": 5, "termino": "Reincidencia", "options": ["La ocurrencia repetitiva de fallas mecánicas dentro de los camiones mezcladores de concreto de la obra vial.", "Comisión de una misma infracción dentro del plazo establecido por ley, contado a partir de la notificación de la sanción anterior firme.", "La presentación de un mismo Informe Técnico Sustentatorio ante dos ministerios sectoriales de forma simultánea."], "correctIndex": 1, "feedback": "La reincidencia exige cometer la MISMA infracción dentro del plazo legal desde la notificación firme anterior; agrava la situación del infractor.", "lesson": 2}, {"id": "CON-098", "mod": 5, "termino": "UIT de Multa", "options": ["Unión Internacional de Tribunales del Ambiente, organismo internacional encargado de resolver disputas transfronterizas.", "Unidad de Impacto Territorial, indicador matemático utilizado en cartografía para medir la fragmentación de hábitats.", "Unidad de medida pecuniaria utilizada por el tribunal del OEFA para tasar el monto económico de las sanciones ambientales."], "correctIndex": 2, "feedback": "La UIT es la unidad de referencia que usa el tribunal de OEFA para tasar el monto económico de cada sanción ambiental.", "lesson": 2}, {"id": "CON-099", "mod": 5, "termino": "Subsanación Voluntaria", "options": ["Corrección del incumplimiento por parte del titular antes de que el OEFA notifique el inicio del procedimiento sancionador, evitando la multa.", "El cambio voluntario del contratista de obras por una empresa local elegida por votación de la comunidad del AID.", "El levantamiento de las observaciones técnicas al EIA dentro de los plazos improrrogables fijados por el Senace."], "correctIndex": 0, "feedback": "Corregir el incumplimiento ANTES de que OEFA notifique el inicio del PAS evita la multa; hacerlo después de notificado ya no califica como voluntario.", "lesson": 2}, {"id": "CON-100", "mod": 5, "termino": "Clausura Definitiva", "options": ["La culminación programada de las obras de construcción vial debido al cumplimiento del cronograma de ingeniería.", "El desmantelamiento de los campamentos temporales al finalizar la etapa de Línea de Base de un estudio ambiental.", "Sanción administrativa extrema que ordena el cierre permanente de las instalaciones o el cese total de las actividades del proyecto."], "correctIndex": 2, "feedback": "La clausura definitiva es la sanción más extrema: ordena el cierre permanente de instalaciones o el cese total de actividades del proyecto.", "lesson": 2}];
+const MODULE_META = {
+ "1": {
+  "name": "Siglas Institucionales",
+  "total": 15,
+  "lessons": 2
+ },
+ "2": {
+  "name": "Conceptos Técnicos de Ingeniería",
+  "total": 15,
+  "lessons": 2
+ },
+ "3": {
+  "name": "Trámites y Parámetros de Monitoreo",
+  "total": 30,
+  "lessons": 3
+ },
+ "4": {
+  "name": "Estrategia de Manejo y Planes de Acción Ambiental",
+  "total": 20,
+  "lessons": 2
+ },
+ "5": {
+  "name": "Fiscalización y Sanciones del OEFA",
+  "total": 20,
+  "lessons": 2
+ }
+};
+const TOTAL_MODULES = Object.keys(MODULE_META).length;
+const STORAGE_KEY = "lenvir_explorer_progress_v1";
+const EXPECTED_TIME = 20;
+
+const BADGES = [
+  {id:'primer_hallazgo', name:'Primer Acierto', desc:'Respondiste correctamente tu primer concepto.', check:p=>p.totalXP>0},
+  {id:'leccion_perfecta', name:'Sin Errores', desc:'Completaste una lección con 100% de precisión.', check:p=>!!(p.flags&&p.flags.hadPerfectLesson)},
+  {id:'racha_7', name:'Constancia', desc:'7 días de racha consecutiva.', check:p=>p.streak>=7},
+  {id:'racha_30', name:'Hábito de Hierro', desc:'30 días de racha consecutiva.', check:p=>p.streak>=30},
+  {id:'mitad_glosario', name:'Mitad del Glosario', desc:'Dominaste al menos 50 de los 100 conceptos.', check:p=>(p.correctEver||[]).length>=50},
+  {id:'glosario_completo', name:'Glosario Completo', desc:'Dominaste los 100 conceptos del programa Explorer.', check:p=>(p.correctEver||[]).length>=100},
+  {id:'velocista', name:'Mente Rápida', desc:'100% de precisión con eficiencia de tiempo \u2265100% en una lección.', check:p=>!!(p.flags&&p.flags.hadFastPerfect)}
+];
+
+let progress = null;
+let state = { screen:"loading", activeModule:null, settingsOpen:false, lesson:null };
+let timerHandle = null;
+
+/* ---------------- almacenamiento (Claude o localStorage de respaldo) ---------------- */
+const HAS_CLAUDE_STORAGE = (typeof window.storage !== 'undefined' && window.storage !== null);
+async function storageGet(key, shared){
+  if(HAS_CLAUDE_STORAGE) return await window.storage.get(key, shared);
+  if(shared) return null;
+  try{ const raw = localStorage.getItem('lenvir_ls_'+key); return raw!==null ? {key:key,value:raw,shared:false} : null; }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  if(HAS_CLAUDE_STORAGE) return await window.storage.set(key, value, shared);
+  if(shared) return null;
+  try{ localStorage.setItem('lenvir_ls_'+key, value); return {key:key,value:value,shared:false}; }catch(e){ return null; }
+}
+
+function defaultProgress(){
+  const modules = {};
+  for(const mid in MODULE_META){
+    const lessons = {};
+    for(let l=1;l<=MODULE_META[mid].lessons;l++){ lessons[l] = {stars:0, completed:false, bestAcc:0}; }
+    modules[mid] = lessons;
+  }
+  return { totalXP:0, streak:0, lastCompletionDate:null, modules, flags:{}, reviewQueue:[], correctEver:[] };
+}
+function ensureShape(){
+  if(!progress || typeof progress!=="object") progress = defaultProgress();
+  if(!progress.modules) progress.modules = defaultProgress().modules;
+  for(const mid in MODULE_META){
+    if(!progress.modules[mid]) progress.modules[mid] = {};
+    for(let l=1;l<=MODULE_META[mid].lessons;l++){
+      if(!progress.modules[mid][l]) progress.modules[mid][l] = {stars:0, completed:false, bestAcc:0};
+    }
+  }
+  if(typeof progress.totalXP !== "number") progress.totalXP = 0;
+  if(typeof progress.streak !== "number") progress.streak = 0;
+  if(progress.lastCompletionDate === undefined) progress.lastCompletionDate = null;
+  if(!progress.flags) progress.flags = {};
+  if(!Array.isArray(progress.reviewQueue)) progress.reviewQueue = [];
+  if(!Array.isArray(progress.correctEver)) progress.correctEver = [];
+}
+async function loadProgress(){
+  try{ const r = await storageGet(STORAGE_KEY, false); progress = r ? JSON.parse(r.value) : defaultProgress(); }
+  catch(e){ progress = defaultProgress(); }
+  ensureShape();
+  state.screen = "map";
+  render();
+}
+async function saveProgress(){
+  try{ await storageSet(STORAGE_KEY, JSON.stringify(progress), false); }
+  catch(e){ console.error("No se pudo guardar el progreso", e); }
+}
+
+/* ---------------- helpers ---------------- */
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function isModuleUnlocked(mid){
+  const idx = Object.keys(MODULE_META).indexOf(String(mid));
+  if(idx<=0) return true;
+  const prevMid = Object.keys(MODULE_META)[idx-1];
+  const prevMeta = MODULE_META[prevMid];
+  for(let l=1;l<=prevMeta.lessons;l++){ if(!progress.modules[prevMid][l].completed) return false; }
+  return true;
+}
+function isLessonUnlocked(mid, lessonNum){
+  if(!isModuleUnlocked(mid)) return false;
+  if(lessonNum===1) return true;
+  return progress.modules[mid][lessonNum-1].completed;
+}
+function moduleStatus(mid){
+  if(!isModuleUnlocked(mid)) return "locked";
+  const meta = MODULE_META[mid];
+  let allDone = true, anyDone = false;
+  for(let l=1;l<=meta.lessons;l++){ if(progress.modules[mid][l].completed) anyDone=true; else allDone=false; }
+  if(allDone) return "done";
+  return "current";
+}
+function getEarnedBadgeIds(p){ return BADGES.filter(b=>b.check(p)).map(b=>b.id); }
+
+/* ---------------- iconos ---------------- */
+function hexPoints(cx,cy,r){
+  const pts=[];
+  for(let i=0;i<6;i++){ const a=(-90+i*60)*Math.PI/180; pts.push((cx+r*Math.cos(a)).toFixed(2)+','+(cy+r*Math.sin(a)).toFixed(2)); }
+  return pts.join(' ');
+}
+function lenvirLogoMark(){
+  return '<svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#05DA95"/><stop offset="100%" stop-color="#0056F5"/></linearGradient></defs>'
+    + '<polygon points="'+hexPoints(20,14,12)+'" fill="url(#lg1)"/>'
+    + '<polygon points="'+hexPoints(20,33,12)+'" fill="url(#lg1)"/>'
+    + '<polygon points="'+hexPoints(20,52,12)+'" fill="url(#lg1)"/>'
+    + '<polygon points="'+hexPoints(20,71,12)+'" fill="url(#lg1)"/>'
+    + '<rect x="29" y="68" width="10" height="6" fill="url(#lg1)"/>'
+    + '<polygon points="'+hexPoints(46,71,12)+'" fill="url(#lg1)"/>'
+    + '</svg>';
+}
+function iconStar(filled){ return '<svg viewBox="0 0 100 100" class="'+(filled?'star-filled':'star-empty')+'"><polygon points="50,6 63,38 98,38 69,59 80,94 50,73 20,94 31,59 2,38 37,38"/></svg>'; }
+function iconStarMini(filled){ return '<svg viewBox="0 0 100 100" style="fill:'+(filled?'#FFE7A0':'rgba(255,255,255,.4)')+'"><polygon points="50,6 63,38 98,38 69,59 80,94 50,73 20,94 31,59 2,38 37,38"/></svg>'; }
+function iconLock(color){ return '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="'+(color||'currentColor')+'" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="'+(color||'currentColor')+'" stroke-width="2"/></svg>'; }
+function iconClose(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'; }
+function iconGear(){ return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'; }
+function iconFlame(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-4 5-4 9a4 4 0 0 0 8 0c0-1.2-.5-2-1-2.7.6 2 0 3.7-1.3 4.4-.2-1.8-1.7-2.2-1.7-4 0 1.5-1 2-1 3.7a2.7 2.7 0 0 0 2.7 2.7c2.5 0 4.3-2 4.3-5 0-5-4-6-6-8z" fill="#0056F5" stroke="#0040C2" stroke-width="1"/></svg>'; }
+function iconBolt(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#05DA95" stroke="#03A876" stroke-width="1"/></svg>'; }
+function iconHex(active){ const c = active ? "url(#lg1)" : "#C7CEDC"; return '<svg viewBox="0 0 24 24"><defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#05DA95"/><stop offset="100%" stop-color="#0056F5"/></linearGradient></defs><polygon points="'+hexPoints(12,12,10)+'" fill="'+c+'"/></svg>'; }
+function iconClock(){ return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function iconBack(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function iconBadgeOn(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V5l8-3z" fill="#F5B400" stroke="#9C7300" stroke-width="1.4"/><path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function iconBadgeOff(){ return '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V5l8-3z" fill="#E2E6EF" stroke="#C7CEDC" stroke-width="1.4"/></svg>'; }
+function iconCheckHero(){ return '<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'; }
+function iconXHero(){ return '<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'; }
+function bigIcon(pathSvg, color){ return '<svg viewBox="0 0 24 24" fill="none" style="width:48px;height:48px;color:'+color+'">'+pathSvg+'</svg>'; }
+function formatTime(totalSeconds){ const s=Math.max(0,Math.floor(totalSeconds)); const m=Math.floor(s/60); const r=s%60; return m+':'+String(r).padStart(2,'0'); }
+
+/* ---------------- render root ---------------- */
+function clearTimerHandle(){ if(timerHandle){ clearInterval(timerHandle); timerHandle=null; } }
+function startTimerTick(){
+  clearTimerHandle();
+  const tickFn = function(){
+    const el = document.getElementById('timer-value');
+    const L = state.lesson;
+    if(!el || !L || L.answered !== null){ clearTimerHandle(); return; }
+    el.textContent = formatTime((Date.now()-L.qStart)/1000);
+  };
+  tickFn();
+  timerHandle = setInterval(tickFn, 500);
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(state.screen==="loading"){ app.innerHTML = "<div style='flex:1;display:flex;align-items:center;justify-content:center;color:#888;font-family:JetBrains Mono,monospace;'>Cargando glosario...</div>"; return; }
+  if(state.screen==="map"){ app.innerHTML = renderHud() + renderMap(); attachMapEvents(); return; }
+  if(state.screen==="lesson"){ app.innerHTML = renderLesson(); attachLessonEvents(); return; }
+  if(state.screen==="summary"){ app.innerHTML = renderSummary(); attachSummaryEvents(); return; }
+}
+
+function renderHud(){
+  return ''
+  + '<div class="hud">'
+  + '<div class="brand"><div class="brand-mark">'+lenvirLogoMark()+'</div><div class="brand-name">LENVIR</div></div>'
+  + '<div class="hud-stats">'
+  + '<div class="stat">'+iconFlame()+progress.streak+'</div>'
+  + '<div class="stat">'+iconBolt()+progress.totalXP+'</div>'
+  + '<button class="gear-btn" id="btn-settings">'+iconGear()+'</button>'
+  + '</div></div>'
+  + (state.settingsOpen ? renderSettings() : "")
+  + (state.activeModule ? renderLevelSelect(state.activeModule) : "");
+}
+function renderMapBgSvg(){
+  return '<svg class="map-bg-svg" viewBox="0 0 400 900" preserveAspectRatio="none">'
+  + '<path d="M-20 80 C 100 40, 250 140, 420 70" stroke="#0056F5" stroke-width="2" fill="none"/>'
+  + '<path d="M-20 300 C 120 260, 260 360, 420 290" stroke="#05DA95" stroke-width="2" fill="none"/>'
+  + '<path d="M-20 550 C 90 510, 280 610, 420 540" stroke="#0056F5" stroke-width="2" fill="none"/>'
+  + '<path d="M-20 780 C 140 740, 240 840, 420 770" stroke="#05DA95" stroke-width="2" fill="none"/>'
+  + '</svg>';
+}
+function renderMap(){
+  const aligns = ["left","right","center"];
+  let nodes = "";
+  const mids = Object.keys(MODULE_META);
+  mids.forEach(function(mid, idx){
+    const status = moduleStatus(mid);
+    const align = aligns[idx%3];
+    const meta = MODULE_META[mid];
+    let totalStars = 0;
+    for(let l=1;l<=meta.lessons;l++){ totalStars += progress.modules[mid][l].stars; }
+    const maxStars = meta.lessons*3;
+    let cls = "node-btn ";
+    let inner = "";
+    if(status==="locked"){ cls += "node-locked"; inner = iconLock(); }
+    else {
+      cls += status==="done" ? "node-done" : "node-current";
+      inner = '<div class="node-id">M'+mid+'</div><div class="node-stars">'+[0,1,2].map(i=>iconStarMini(totalStars>=Math.ceil(maxStars*(i+1)/3))).join("")+'</div>';
+    }
+    nodes += (idx>0 ? '<div class="connector"></div>' : '')
+      + '<div class="node-row '+align+'"><div class="node-col">'
+      + '<button class="'+cls+'" data-mod="'+mid+'" '+(status==="locked"?"disabled":"")+'>'+inner+'</button>'
+      + '<div class="node-label">M'+mid+' \u00b7 '+meta.name+'</div></div></div>';
+  });
+  const reviewCount = (progress.reviewQueue||[]).length;
+  const reviewHtml = '<div class="review-banner '+(reviewCount?'':'empty')+'">'
+    + '<div><div class="review-title">\ud83d\udcd6 Conceptos por repasar</div><div class="review-sub">'+(reviewCount? reviewCount+' pendiente(s)':'Sin pendientes')+'</div></div>'
+    + (reviewCount? '<button class="level-btn review" id="btn-review">Repasar</button>' : '')
+    + '</div>';
+  return '<div class="map-wrap">'
+    + renderMapBgSvg()
+    + '<div class="map-intro"><div class="eyebrow">Programa Explorer \u00b7 100 conceptos</div><h2>Glosario Ambiental</h2>'
+    + '<div class="tagline"><b>Learn.</b> <b class="g">Demonstrate.</b> Elevate.</div></div>'
+    + reviewHtml
+    + '<div class="path">'+nodes+'</div>'
+    + '</div>';
+}
+function attachMapEvents(){
+  document.getElementById('btn-settings').onclick = function(){ state.settingsOpen = true; render(); };
+  const reviewBtn = document.getElementById('btn-review');
+  if(reviewBtn) reviewBtn.onclick = startReviewLesson;
+  document.querySelectorAll('.node-btn[data-mod]').forEach(function(btn){
+    btn.onclick = function(){ const mid = btn.dataset.mod; if(moduleStatus(mid)==="locked") return; state.activeModule = mid; render(); };
+  });
+  if(state.activeModule) attachLevelSelectEvents();
+  if(state.settingsOpen) attachSettingsEvents();
+}
+
+function renderLevelSelect(mid){
+  const meta = MODULE_META[mid];
+  let rows = "";
+  for(let l=1;l<=meta.lessons;l++){
+    const unlocked = isLessonUnlocked(mid, l);
+    const rec = progress.modules[mid][l];
+    const startIdx = (l-1)*10+1;
+    const endIdx = Math.min(l*10, meta.total);
+    const btnLabel = !unlocked ? "" : (rec.completed ? "Repasar" : "Empezar");
+    rows += '<div class="level-card '+(unlocked?'':'locked')+'">'
+      + '<div class="level-left"><div class="level-name">Lecci\u00f3n '+l+'</div>'
+      + '<div class="level-sub">Conceptos '+startIdx+'\u2013'+endIdx+'</div>'
+      + (unlocked ? '<div class="level-stars">'+[0,1,2].map(i=>iconStar(i<rec.stars)).join("")+'</div>' : '<div class="lock-pill">'+iconLock()+'<span>Bloqueado</span></div>')
+      + '</div>'
+      + (unlocked ? '<button class="level-btn '+(rec.completed?'review':'')+'" data-mod="'+mid+'" data-lesson="'+l+'">'+btnLabel+'</button>' : "")
+      + '</div>';
+  }
+  return '<div class="overlay" id="level-overlay"><div class="sheet">'
+    + '<button class="sheet-close" id="level-close">'+iconClose()+'</button>'
+    + '<div class="module-tag">M\u00d3DULO M'+mid+'</div><h2>'+meta.name+'</h2>'
+    + rows + '</div></div>';
+}
+function attachLevelSelectEvents(){
+  const overlay = document.getElementById('level-overlay');
+  if(!overlay) return;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay){ state.activeModule=null; render(); } });
+  document.getElementById('level-close').onclick = function(){ state.activeModule=null; render(); };
+  document.querySelectorAll('.level-btn[data-mod]').forEach(function(btn){
+    btn.onclick = function(){ startLesson(btn.dataset.mod, parseInt(btn.dataset.lesson,10)); };
+  });
+}
+
+function renderSettings(){
+  const earned = {};
+  getEarnedBadgeIds(progress).forEach(function(id){ earned[id]=true; });
+  const badgesHtml = BADGES.map(function(b){
+    const has = !!earned[b.id];
+    return '<div class="badge-card '+(has?'earned':'locked')+'"><div class="badge-icon">'+(has?iconBadgeOn():iconBadgeOff())+'</div><div class="badge-name">'+b.name+'</div><div class="badge-desc">'+b.desc+'</div></div>';
+  }).join("");
+  const mastered = (progress.correctEver||[]).length;
+  return '<div class="overlay" id="settings-overlay"><div class="sheet settings-sheet">'
+    + '<button class="sheet-close" id="settings-close">'+iconClose()+'</button><h2>Tu progreso</h2>'
+    + '<div class="settings-row"><div><div style="font-weight:600;font-size:14px;">Racha actual</div><div style="font-size:12.5px;color:var(--ink-soft);">'+progress.streak+' d\u00eda(s) consecutivos</div></div>'+iconFlame()+'</div>'
+    + '<div class="settings-row"><div><div style="font-weight:600;font-size:14px;">Puntos acumulados</div><div style="font-size:12.5px;color:var(--ink-soft);">'+progress.totalXP+' XP totales</div></div></div>'
+    + '<div class="settings-row"><div><div style="font-weight:600;font-size:14px;">Conceptos dominados</div><div style="font-size:12.5px;color:var(--ink-soft);">'+mastered+' / 100</div></div></div>'
+    + '<div class="badges-grid">'+badgesHtml+'</div>'
+    + '<div class="settings-row" style="margin-top:6px;"><div><div style="font-weight:600;font-size:14px;">Reiniciar progreso</div><div style="font-size:12.5px;color:var(--ink-soft);">Borra estrellas, XP, racha e insignias</div></div><button class="danger-btn" id="btn-reset">Reiniciar</button></div>'
+    + '</div></div>';
+}
+function attachSettingsEvents(){
+  const overlay = document.getElementById('settings-overlay');
+  if(!overlay) return;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay){ state.settingsOpen=false; render(); } });
+  document.getElementById('settings-close').onclick = function(){ state.settingsOpen=false; render(); };
+  document.getElementById('btn-reset').onclick = function(){
+    if(confirm("\u00bfSeguro que deseas reiniciar todo tu progreso en Lenvir Explorer?")){
+      progress = defaultProgress();
+      saveProgress();
+      state.settingsOpen = false; state.activeModule = null; render();
+    }
+  };
+}
+
+/* ---------------- LESSON ---------------- */
+function startLesson(mid, lessonNum){
+  const pool = CASES.filter(function(c){ return String(c.mod)===String(mid) && c.lesson===lessonNum; });
+  const queue = shuffle(pool);
+  state.lesson = { mod:mid, lesson:lessonNum, queue:queue, idx:0, lives:5, correctCount:0, xpGained:0, answered:null, failed:false, isReview:false, results:[], timeScores:[], qStart:Date.now() };
+  state.activeModule = null;
+  state.screen = "lesson";
+  render();
+}
+function startReviewLesson(){
+  const items = (progress.reviewQueue||[]).map(function(rq){ return CASES.find(function(c){ return c.id===rq.caseId; }); }).filter(Boolean);
+  if(items.length===0) return;
+  const queue = shuffle(items).slice(0, Math.min(10, items.length));
+  state.lesson = { mod:null, lesson:null, queue:queue, idx:0, lives:5, correctCount:0, xpGained:0, answered:null, failed:false, isReview:true, results:[], timeScores:[], qStart:Date.now() };
+  state.screen = "lesson";
+  render();
+}
+function renderLesson(){
+  const L = state.lesson;
+  const q = L.queue[L.idx];
+  const pct = Math.round((L.idx/L.queue.length)*100);
+  const livesHtml = Array.from({length:5}).map(function(_,i){ return '<div class="life-icon">'+iconHex(i<L.lives)+'</div>'; }).join("");
+  const optionsHtml = q.options.map(function(opt,i){
+    let cls = "option"; let disabledAttr = "";
+    if(L.answered!==null){
+      disabledAttr = "disabled";
+      if(i===q.correctIndex) cls += " correct";
+      else if(i===L.answered) cls += " wrong";
+      else cls += " dim";
+    }
+    return '<button class="'+cls+'" data-idx="'+i+'" '+disabledAttr+'><span class="badge">'+"ABC"[i]+'</span><span>'+escapeHtml(opt)+'</span></button>';
+  }).join("");
+  let feedbackHtml = "";
+  if(L.answered!==null){
+    const correct = L.answered===q.correctIndex;
+    const xpLabel = L.isReview ? '+5 XP' : '+10 XP';
+    feedbackHtml = '<div class="feedback-sheet '+(correct?'ok':'bad')+'">'
+      + '<div class="fb-row"><div class="stamp">'+(correct?'\u00a1DOMINADO!':'A REPASAR')+'</div>'
+      + '<div class="fb-text"><div class="fb-title">'+(correct?('\u00a1Correcto! '+xpLabel):'No es esta definici\u00f3n')+'</div></div></div>'
+      + '<div class="fb-body">'+escapeHtml(q.feedback)+'</div>'
+      + '<button class="fb-continue" id="btn-continue">Continuar</button></div>';
+  }
+  const timerSeconds = L.answered===null ? (Date.now()-L.qStart)/1000 : (L.lastElapsedSeconds||0);
+  const timerCls = L.answered===null ? 'timer-badge ticking' : 'timer-badge frozen';
+  const timerHtml = '<div class="'+timerCls+'">'+iconClock()+'<span id="timer-value">'+formatTime(timerSeconds)+'</span></div>';
+  return '<div class="lesson-top"><button class="exit-btn" id="btn-exit">'+iconClose()+'</button>'
+    + '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
+    + '<div class="lives">'+livesHtml+'</div></div>'
+    + '<div class="lesson-body">'
+    + '<div class="case-tag-row"><div class="case-tag">'+q.id+(L.isReview?' \u00b7 REPASO':'')+'</div>'+timerHtml+'</div>'
+    + '<div class="term-card"><div class="term-word">'+escapeHtml(q.termino)+'</div></div>'
+    + '<div class="term-prompt">\u00bfCu\u00e1l es la definici\u00f3n correcta?</div>'
+    + '<div class="options">'+optionsHtml+'</div></div>'
+    + feedbackHtml;
+}
+function attachLessonEvents(){
+  document.getElementById('btn-exit').onclick = function(){
+    if(confirm("\u00bfSalir de la lecci\u00f3n? Perder\u00e1s el avance de esta sesi\u00f3n.")){ clearTimerHandle(); state.screen = "map"; state.lesson = null; render(); }
+  };
+  const L = state.lesson;
+  if(L.answered===null){
+    document.querySelectorAll('.option').forEach(function(btn){ btn.onclick = function(){ selectOption(parseInt(btn.dataset.idx,10)); }; });
+    startTimerTick();
+  } else {
+    clearTimerHandle();
+    const cont = document.getElementById('btn-continue');
+    if(cont) cont.onclick = nextQuestion;
+  }
+}
+function selectOption(optIdx){
+  const L = state.lesson;
+  if(L.answered!==null) return;
+  const q = L.queue[L.idx];
+  L.answered = optIdx;
+  const correct = optIdx===q.correctIndex;
+
+  const elapsed = Math.max(1, (Date.now()-L.qStart)/1000);
+  L.lastElapsedSeconds = elapsed;
+  const rawTime = Math.max(40, Math.min(130, Math.round((EXPECTED_TIME/elapsed)*100)));
+  L.timeScores.push(rawTime);
+  L.results.push({caseId:q.id, correct:correct});
+
+  if(correct){
+    L.correctCount++; L.xpGained += L.isReview ? 5 : 10;
+    if(progress.correctEver.indexOf(q.id)===-1) progress.correctEver.push(q.id);
+  } else {
+    L.lives--;
+    if(!L.isReview){
+      if(!progress.reviewQueue.find(function(rq){ return rq.caseId===q.id; })){
+        progress.reviewQueue.push({caseId:q.id, timesCorrect:0});
+      }
+    }
+  }
+  clearTimerHandle();
+  render();
+}
+function nextQuestion(){
+  const L = state.lesson;
+  if(L.lives<=0){ L.failed = true; finishLesson(); return; }
+  L.idx++; L.answered = null; L.qStart = Date.now();
+  if(L.idx>=L.queue.length){ finishLesson(); return; }
+  render();
+}
+function finishLesson(){
+  clearTimerHandle();
+  const L = state.lesson;
+  const total = L.queue.length;
+  const acc = total? L.correctCount/total : 0;
+
+  if(L.isReview){
+    L.results.forEach(function(r){
+      const idx = progress.reviewQueue.findIndex(function(rq){ return rq.caseId===r.caseId; });
+      if(idx>=0){
+        if(r.correct){
+          progress.reviewQueue[idx].timesCorrect = (progress.reviewQueue[idx].timesCorrect||0)+1;
+          if(progress.reviewQueue[idx].timesCorrect>=2) progress.reviewQueue.splice(idx,1);
+        } else { progress.reviewQueue[idx].timesCorrect = 0; }
+      }
+    });
+    progress.totalXP += L.xpGained;
+    L.acc = acc;
+    saveProgress();
+    state.screen = "summary"; render(); return;
+  }
+
+  const prevBadges = getEarnedBadgeIds(progress);
+  const tiempoRaw = L.timeScores.length ? L.timeScores.reduce(function(a,b){return a+b;},0)/L.timeScores.length : 70;
+
+  let stars = 0;
+  if(!L.failed){
+    if(acc>=1) stars=3; else if(acc>=0.8) stars=2; else if(acc>=0.6) stars=1; else stars=0;
+    if(acc>=1) L.xpGained += 20;
+    const rec = progress.modules[L.mod][L.lesson];
+    rec.completed = true;
+    rec.stars = Math.max(rec.stars, stars);
+    rec.bestAcc = Math.max(rec.bestAcc, acc);
+    progress.totalXP += L.xpGained;
+    if(!progress.flags) progress.flags = {};
+    if(acc>=1) progress.flags.hadPerfectLesson = true;
+    if(acc>=1 && tiempoRaw>=100) progress.flags.hadFastPerfect = true;
+    updateStreak();
+  }
+
+  const newBadges = getEarnedBadgeIds(progress).filter(function(id){ return prevBadges.indexOf(id)===-1; });
+  L.newBadges = newBadges;
+  L.stars = stars; L.acc = acc;
+
+  saveProgress();
+  state.screen = "summary";
+  render();
+}
+function updateStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  if(progress.lastCompletionDate === today) return;
+  if(progress.lastCompletionDate){
+    const diffDays = Math.round((new Date(today) - new Date(progress.lastCompletionDate)) / 86400000);
+    progress.streak = diffDays===1 ? progress.streak + 1 : 1;
+  } else { progress.streak = 1; }
+  progress.lastCompletionDate = today;
+}
+
+/* ---------------- SUMMARY ---------------- */
+function renderSummary(){
+  const L = state.lesson;
+  const total = L.queue.length;
+  if(L.isReview){
+    return '<div class="summary-wrap"><div class="summary-stamp">'+bigIcon(iconCheckHero(),'var(--blue-dark)')+'</div>'
+      + '<h2 class="summary-title">Repaso completado</h2>'
+      + '<div class="summary-sub">Conceptos revisados de tu lista pendiente</div>'
+      + '<div class="summary-grid"><div class="summary-box"><div class="num">'+L.correctCount+'/'+total+'</div><div class="lbl">Correctas</div></div>'
+      + '<div class="summary-box"><div class="num">+'+L.xpGained+'</div><div class="lbl">XP ganado</div></div></div>'
+      + '<button class="btn-primary" id="btn-tomap">Continuar</button></div>';
+  }
+  if(L.failed){
+    return '<div class="summary-wrap"><div class="summary-stamp fail">'+bigIcon(iconXHero(),'var(--error)')+'</div>'
+      + '<h2 class="summary-title">Lecci\u00f3n incompleta</h2>'
+      + '<div class="summary-sub">Se agotaron tus 5 vidas en M'+L.mod+' \u00b7 Lecci\u00f3n '+L.lesson+'</div>'
+      + '<div class="summary-grid"><div class="summary-box"><div class="num">'+L.correctCount+'/'+total+'</div><div class="lbl">Correctas</div></div>'
+      + '<div class="summary-box"><div class="num">'+(L.idx+1)+'/'+total+'</div><div class="lbl">Avanzado</div></div></div>'
+      + '<button class="btn-primary" id="btn-retry">Reintentar lecci\u00f3n</button>'
+      + '<button class="btn-ghost" id="btn-tomap">Volver al mapa</button></div>';
+  }
+  const badgesHtml = (L.newBadges&&L.newBadges.length) ? '<div class="badges-toast"><b>\ud83c\udfc5 Nueva(s) insignia(s)</b>'+L.newBadges.map(function(id){ return BADGES.find(function(b){return b.id===id;}).name; }).join(", ")+'</div>' : "";
+  return '<div class="summary-wrap"><div class="summary-stamp">'+bigIcon(iconCheckHero(),'var(--green-dark)')+'</div>'
+    + '<h2 class="summary-title">Lecci\u00f3n completada</h2>'
+    + '<div class="summary-sub">M'+L.mod+' \u00b7 Lecci\u00f3n '+L.lesson+'</div>'
+    + '<div class="summary-stars">'+[0,1,2].map(i=>iconStar(i<L.stars)).join("")+'</div>'
+    + badgesHtml
+    + '<div class="summary-grid"><div class="summary-box"><div class="num">'+Math.round(L.acc*100)+'%</div><div class="lbl">Precisi\u00f3n</div></div>'
+    + '<div class="summary-box"><div class="num">+'+L.xpGained+'</div><div class="lbl">XP ganado</div></div>'
+    + '<div class="summary-box"><div class="num">'+L.correctCount+'/'+total+'</div><div class="lbl">Correctas</div></div></div>'
+    + '<button class="btn-primary" id="btn-tomap">Continuar</button>'
+    + '<button class="btn-ghost" id="btn-retry">Repasar de nuevo</button></div>';
+}
+function attachSummaryEvents(){
+  const L = state.lesson;
+  document.getElementById('btn-tomap').onclick = function(){ state.screen="map"; state.lesson=null; render(); };
+  const retry = document.getElementById('btn-retry');
+  if(retry) retry.onclick = function(){ if(L.isReview) startReviewLesson(); else startLesson(L.mod, L.lesson); };
+}
+
+loadProgress();
+</script>
+</body>
+</html>
